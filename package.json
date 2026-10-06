@@ -1,0 +1,44 @@
+{
+  "name": "dulger-psys",
+  "version": "1.0.0",
+  "description": "Kurumsal Uretim Sistemleri",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "^30.5.1",
+    "electron-builder": "^24.13.3"
+  },
+  "dependencies": {
+    "electron-updater": "^6.8.9",
+    "nodemailer": "^6.10.1"
+  },
+  "build": {
+    "appId": "com.dulgeryapi.psys",
+    "productName": "Kurumsal Uretim Sistemleri",
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "Dulgeryapi",
+      "repo": "psys-updates"
+    },
+    "files": [
+      "main.js",
+      "storage.js",
+      "preload.js",
+      "app.html",
+      "icon.ico"
+    ]
+  }
+}
