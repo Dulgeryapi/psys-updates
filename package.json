@@ -31,7 +31,8 @@
     "publish": {
       "provider": "github",
       "owner": "Dulgeryapi",
-      "repo": "psys-updates"
+      "repo": "psys-updates",
+      "releaseType": "release"
     },
     "files": [
       "main.js",
