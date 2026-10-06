@@ -2056,6 +2056,22 @@ function startNewHakedis(){
   render();
 }
 function selectAktifHakedis(id){ if(!id) state.hkDigerAcik = true; state.aktifHakedisId = id || null; state.hakedisAltTab='hakedis'; render(); }
+function hakedisKopyala(id){
+  const h = state.hakedisler.find(x=>x.id===id); if(!h || h.statu!=='Kapatıldı') return;
+  const sonraki = hakedislerOf(h.projeKodu, h.ustaId).find(x=>x.hakedisNo===h.hakedisNo+1);
+  if(sonraki){ showToast('Sonraki dönem zaten oluşturulmuş:', sonraki.hakedisId); state.aktifHakedisId = sonraki.id; state.hkDigerAcik = false; render(); return; }
+  state.aktifHakedisId = null;
+  state.hkDigerAcik = true;
+  onFieldRender('newHkProjeKodu', h.projeKodu);
+  onFieldRender('newHkUstaId', h.ustaId);
+  onFieldRender('newHkSirketKodu', h.sirketKodu);
+  onFieldRender('newHkTuru', h.hakedisTuru);
+  onFieldRender('newHkIsTuru', h.yapilanIsTuru);
+  onHkSozlesmeSecildi(h.sozlesmeNo);
+  state.newHkBaslangic = h.bitis; // kopyalanan hakedisin bitisi, yenisinin baslangici (kumulatif biten->onceki zinciri korunur)
+  showToast(`${h.hakedisId} kopyalandı. Bitiş Tarihini girip "Hakediş Başlat" deyin.`);
+  render();
+}
 
 let _dropdownCloseTimer = null;
 function kapatDropdownGecikmeli(flagKey){
@@ -2354,10 +2370,15 @@ function tekrarAc(){
   const h = getAktifHakedis(); if(!h) return;
   const sonraki = hakedislerOf(h.projeKodu, h.ustaId).find(x=>x.hakedisNo===h.hakedisNo+1);
   if(sonraki){ showToast('Bu hakediş tekrar açılamaz: sonraki dönem zaten başlamış.'); return; }
-  if(!confirm('Bu hakedişi tekrar açmak istediğinize emin misiniz?')) return;
+  const sebep = prompt('Bu kapalı hakediş tekrar açılıyor. Lütfen sebebini yazın:');
+  if(sebep===null) return;
+  if(!sebep.trim()){ showToast('Sebep girilmeden tekrar açma işlemi yapılamaz.'); return; }
+  h.tekrarAcmaSebebi = formatCumleTR(sebep.trim());
+  h.tekrarAcmaTarihi = new Date().toLocaleString('tr-TR');
   hkEkleTarihce(h, 'Kapatıldı', 'Planlandı');
   h.statu = 'Planlandı';
   saveHakedisler(); render();
+  showToast('Hakediş tekrar açıldı.');
 }
 function ustaAramaListesi(query, onSelectFn){
   const q = (query||'').trim().toLocaleLowerCase('tr-TR');
@@ -5070,7 +5091,7 @@ function renderHakedisSecEkrani(){
       <td>${x.hakedisNo}</td>
       <td>${x.donem}</td>
       <td>${x.statu==='Kapatıldı' ? '<span style="color:var(--accent-dark);">Kapatıldı ('+x.kapanmaKodu+')</span>' : '<span style="color:var(--primary);">Planlandı</span>'}</td>
-      <td onclick="event.stopPropagation();"><button class="icon-btn del-btn" onclick="deleteHakedis('${x.id}')" title="Sil">✕</button></td>
+      <td onclick="event.stopPropagation();">${x.statu==='Kapatıldı' ? `<button class="icon-btn" onclick="hakedisKopyala('${x.id}')" title="Sonraki dönemi bu hakedişten kopyala">⧉ Kopyala</button>` : ''}<button class="icon-btn del-btn" onclick="deleteHakedis('${x.id}')" title="Sil">✕</button></td>
     </tr>`).join('');
   const projeOpts = state.projeler.map(p=>`<option value="${p.kodu}" ${state.newHkProjeKodu===p.kodu?'selected':''}>${p.kodu} — ${escapeHtml(p.ad)}</option>`).join('');
   const ustaOpts = state.ustalar.map(u=>`<option value="${u.id}" ${state.newHkUstaId===u.id?'selected':''}>${escapeHtml(u.ad)}${u.kod?' ('+escapeHtml(u.kod)+')':''}</option>`).join('');
@@ -5843,6 +5864,7 @@ function renderHkKapakTab(h){
       <div style="height:8px;"></div>
       ${row('Yükleniciye Ödenecek Net Tutar', k.netOdenecek, {bold:true})}
     </div>
+    ${h.tekrarAcmaSebebi ? `<div class="disabled-hint" style="margin-bottom:12px;border-left:3px solid var(--danger);">↺ Bu hakediş ${h.tekrarAcmaTarihi} tarihinde tekrar açılmıştır. Sebep: ${escapeHtml(h.tekrarAcmaSebebi)}</div>` : ''}
     <div class="card" style="margin-bottom:16px;">
       <h2><span class="num">📝</span>Kapak Notu</h2>
       ${kapali
