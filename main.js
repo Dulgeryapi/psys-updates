@@ -160,8 +160,11 @@ ipcMain.handle('mail-ayarlari-oku', () => {
 });
 ipcMain.handle('mail-ayarlari-kaydet', (event, cfg) => {
   try{
-    if(!cfg || !cfg.host || !cfg.port || !cfg.user || !cfg.pass) return { error: 'Tüm alanlar zorunludur.' };
-    saveMailConfig({ host: String(cfg.host).trim(), port: Number(cfg.port), guvenlik: cfg.guvenlik||'ssl', user: String(cfg.user).trim(), pass: String(cfg.pass) });
+    if(!cfg || !cfg.host || !cfg.port || !cfg.user) return { error: 'Sunucu, Port ve Kullanıcı Adı zorunludur.' };
+    const mevcut = loadMailConfig();
+    const sifre = cfg.pass ? String(cfg.pass) : (mevcut ? mevcut.pass : ''); // bos gonderilirse mevcut sifre korunur
+    if(!sifre) return { error: 'Şifre zorunludur.' };
+    saveMailConfig({ host: String(cfg.host).trim(), port: Number(cfg.port), guvenlik: cfg.guvenlik||'ssl', user: String(cfg.user).trim(), pass: sifre });
     return { basarili: true };
   }catch(e){ return { error: e.message }; }
 });

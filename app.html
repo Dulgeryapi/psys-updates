@@ -513,7 +513,7 @@ const state = {
   personelAcikId: '', editPersonelId: null, editPersonelDraft: {}, personelDepartmanFiltre: '',
   izinF: { personelId:'', baslangic:'', bitis:'', sebep:'', tur:'Yıllık İzin', adres:'', telefon:'', baslangicSaat:'08:00', bitisSaat:'08:00', vekaletEdenId:'' },
   issozSablonOzel: null, issozSablonAd: '', muhasebeEmail: '',
-  mailAyarlariYerel: { ayarliMi:false, host:'', port:'', guvenlik:'ssl', user:'' }, mailAyarlariForm: { host:'', port:'465', guvenlik:'ssl', user:'', pass:'' },
+  mailAyarlariYerel: { ayarliMi:false, host:'', port:'', guvenlik:'ssl', user:'' }, mailAyarlariForm: { host:'', port:'465', guvenlik:'ssl', user:'', pass:'' }, mailAyarlariSifreGoster: false,
   mlzsozSablonOzel: null, mlzsozSablonAd: '',
   mlzsozAcikId: '', mlzsozF: { kurumAdres:'', teslimatYeri:'', odemeSarti:'', cezaTutar:'', cezaTavan:'10', ozelMaddeler:'', imzaTarihi:'', teknikSartnameEk:'', fiyatFarkiVar:false, fiyatFarkiKalem:'', fiyatFarkiOran:'' },
   issozAcikId: '', issozF: { tcKimlik:'', babaAdi:'', dogumYeriTarihi:'', acikAdres:'', ucret:'', calisacagiBirim:'', sozlesmeSuresi:'1 YIL', denemeSuresi:'2 AY', zorunluHizmetSuresi:'1 YIL', imzaTarihi:'', zorunluBaslama:'', zorunluBitis:'' },
@@ -4814,7 +4814,7 @@ function renderManageTab(){
           <div class="field"><label>SMTP Sunucu</label><input type="text" value="${escapeHtml(state.mailAyarlariForm.host)}" oninput="onMailAyarlariForm('host', this.value)" placeholder="örn. mail.dulgeryapi.com.tr"></div>
           <div class="field"><label>Port</label><input type="text" inputmode="numeric" value="${escapeHtml(state.mailAyarlariForm.port)}" oninput="onMailAyarlariForm('port', this.value)" placeholder="465"></div>
           <div class="field"><label>Bağlantı Güvenliği</label>
-            <select onchange="onMailAyarlariForm('guvenlik', this.value)">
+            <select onchange="onMailAyarlariGuvenlik(this.value)">
               <option value="ssl" ${state.mailAyarlariForm.guvenlik==='ssl'?'selected':''}>SSL/TLS (genelde port 465)</option>
               <option value="starttls" ${state.mailAyarlariForm.guvenlik==='starttls'?'selected':''}>STARTTLS (genelde port 587)</option>
               <option value="yok" ${state.mailAyarlariForm.guvenlik==='yok'?'selected':''}>Yok (şifresiz)</option>
@@ -4823,7 +4823,12 @@ function renderManageTab(){
         </div>
         <div class="row2" style="margin-bottom:10px;">
           <div class="field"><label>Kullanıcı Adı (e-posta)</label><input type="email" value="${escapeHtml(state.mailAyarlariForm.user)}" oninput="onMailAyarlariForm('user', this.value)" placeholder="yazilim@dulgeryapi.com.tr"></div>
-          <div class="field"><label>Şifre</label><input type="password" value="${escapeHtml(state.mailAyarlariForm.pass)}" oninput="onMailAyarlariForm('pass', this.value)" placeholder="${state.mailAyarlariYerel.ayarliMi?'(değiştirmek için yeniden girin)':''}"></div>
+          <div class="field"><label>Şifre</label>
+            <div style="display:flex;gap:6px;">
+              <input type="${state.mailAyarlariSifreGoster?'text':'password'}" value="${escapeHtml(state.mailAyarlariForm.pass)}" oninput="onMailAyarlariForm('pass', this.value)" placeholder="${state.mailAyarlariYerel.ayarliMi?'(değiştirmek için yeniden girin)':''}" style="flex:1;">
+              <button type="button" class="icon-btn" onclick="state.mailAyarlariSifreGoster=!state.mailAyarlariSifreGoster; render();" title="Şifreyi göster/gizle">${state.mailAyarlariSifreGoster?'🙈':'👁'}</button>
+            </div>
+          </div>
         </div>
         <div class="actions" style="margin-top:0;">
           <button class="btn btn-publish" onclick="mailAyarlariKaydet()">Kaydet</button>
@@ -8568,6 +8573,13 @@ loadAll();
 /* ---------- baska bir bilgisayar veri degistirdi mi: sessiz kontrol, mevcut ekrana hic dokunmaz ---------- */
 const hasDisDegisiklik = typeof window !== 'undefined' && !!window.disDegisiklik;
 function onMailAyarlariForm(alan, v){ state.mailAyarlariForm[alan] = v; }
+function onMailAyarlariGuvenlik(v){
+  state.mailAyarlariForm.guvenlik = v;
+  // standart portu otomatik doldur (kullanici sonradan elle degistirebilir)
+  if(v==='ssl') state.mailAyarlariForm.port = '465';
+  else if(v==='starttls') state.mailAyarlariForm.port = '587';
+  render();
+}
 async function mailAyarlariYukle(){
   if(!hasMailAyarlari) return;
   try{
@@ -8579,9 +8591,15 @@ async function mailAyarlariYukle(){
 }
 async function mailAyarlariKaydet(){
   const f = state.mailAyarlariForm;
-  if(!f.host.trim() || !f.port || !f.user.trim() || !f.pass){ showToast('Tüm alanları doldurun (Sunucu, Port, Kullanıcı Adı, Şifre).'); return; }
+  const sifreGerekli = !state.mailAyarlariYerel.ayarliMi; // zaten kayitliysa, sifre bos birakilip mevcut sifre korunabilir
+  if(!f.host.trim() || !f.port || !f.user.trim() || (sifreGerekli && !f.pass)){
+    showToast(sifreGerekli ? 'Tüm alanları doldurun (Sunucu, Port, Kullanıcı Adı, Şifre).' : 'Sunucu, Port ve Kullanıcı Adı boş olamaz.');
+    return;
+  }
   try{
-    const sonuc = await window.mailAyarlari.kaydet({ host: f.host.trim(), port: Number(f.port), guvenlik: f.guvenlik, user: f.user.trim(), pass: f.pass });
+    const kayitVerisi = { host: f.host.trim(), port: Number(f.port), guvenlik: f.guvenlik, user: f.user.trim() };
+    if(f.pass) kayitVerisi.pass = f.pass; // bos ise gonderilmez, ana surec MEVCUT sifreyi korur
+    const sonuc = await window.mailAyarlari.kaydet(kayitVerisi);
     if(sonuc && sonuc.basarili){
       showToast('Mail ayarları kaydedildi. Test maili göndererek doğrulamanızı öneririz.');
       state.mailAyarlariForm.pass = '';
