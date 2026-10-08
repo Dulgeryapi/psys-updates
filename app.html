@@ -5364,6 +5364,7 @@ function renderHakedisIcerik(h){
         <div style="display:flex;gap:6px;align-items:center;">
           ${ro ? `<button class="icon-btn" onclick="hakedisKopyala('${h.id}')" title="Sonraki dönemi bu hakedişten kopyala">⧉</button>` : ''}
           <button class="icon-btn" onclick="selectAktifHakedis(null); hkYeniFormAc();" title="Yeni Hakediş Başlat">+</button>
+          <button class="icon-btn del-btn" onclick="deleteHakedis('${h.id}')" title="Bu hakedişi sil">🗑</button>
           <span class="poz-preview-code" style="background:${ro?'var(--accent-tint)':'var(--primary-tint)'};color:${ro?'var(--accent-dark)':'var(--primary)'};">${ro ? 'KAPATILDI · '+h.kapanmaKodu : 'PLANLANDI'}</span>
           <button class="btn btn-ghost btn-sm" onclick="selectAktifHakedis(null)">‹ Listeye dön</button>
         </div>
