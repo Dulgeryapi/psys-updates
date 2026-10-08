@@ -136,22 +136,32 @@ ipcMain.handle('veri-degisiklik-onayla', () => {
 /* ---------- PDF olarak kaydet (proje/usta/hakedis adini dosya adi olarak onerir) ---------- */
 /* ---------- Mail Ayarlari (bu bilgisayara ozel, Yandex'e hic gitmez) ve gercek SMTP gonderimi ---------- */
 function mailTransporterOlustur(cfg){
+  const guvenlik = cfg.guvenlik || 'ssl'; // 'ssl' | 'starttls' | 'yok'
   return nodemailer.createTransport({
     host: cfg.host, port: Number(cfg.port) || 465,
-    secure: Number(cfg.port) === 465, // 465 = SSL, 587 = STARTTLS
+    secure: guvenlik === 'ssl',
+    requireTLS: guvenlik === 'starttls',
     auth: { user: cfg.user, pass: cfg.pass },
     connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 15000,
   });
+}
+function zamanAsimliCalistir(promise, msg, ms){
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error(msg)), ms))
+  ]);
 }
 ipcMain.handle('mail-ayarlari-oku', () => {
   const cfg = loadMailConfig();
   if(!cfg) return { ayarliMi: false };
-  return { ayarliMi: true, host: cfg.host, port: cfg.port, user: cfg.user }; // sifre asla geri donmez
+  return { ayarliMi: true, host: cfg.host, port: cfg.port, guvenlik: cfg.guvenlik||'ssl', user: cfg.user }; // sifre asla geri donmez
 });
 ipcMain.handle('mail-ayarlari-kaydet', (event, cfg) => {
   try{
     if(!cfg || !cfg.host || !cfg.port || !cfg.user || !cfg.pass) return { error: 'Tüm alanlar zorunludur.' };
-    saveMailConfig({ host: String(cfg.host).trim(), port: Number(cfg.port), user: String(cfg.user).trim(), pass: String(cfg.pass) });
+    saveMailConfig({ host: String(cfg.host).trim(), port: Number(cfg.port), guvenlik: cfg.guvenlik||'ssl', user: String(cfg.user).trim(), pass: String(cfg.pass) });
     return { basarili: true };
   }catch(e){ return { error: e.message }; }
 });
@@ -163,11 +173,11 @@ ipcMain.handle('mail-test-gonder', async () => {
   if(!cfg) return { error: 'Önce mail ayarlarını kaydedin.' };
   try{
     const transporter = mailTransporterOlustur(cfg);
-    await transporter.verify();
-    await transporter.sendMail({
+    await zamanAsimliCalistir(transporter.verify(), 'Sunucuya 20 saniyede bağlanılamadı (sunucu adresi/port yanlış veya erişilemiyor olabilir).', 20000);
+    await zamanAsimliCalistir(transporter.sendMail({
       from: cfg.user, to: cfg.user, subject: 'Kurumsal Üretim Sistemleri — Test Maili',
       text: 'Bu bir test mailidir. Mail ayarlarınız doğru çalışıyor.',
-    });
+    }), 'Mail gönderimi 20 saniyede tamamlanamadı.', 20000);
     return { basarili: true };
   }catch(e){ return { error: e.message }; }
 });
@@ -176,7 +186,7 @@ ipcMain.handle('mail-gonder', async (event, { to, subject, text }) => {
   if(!cfg) return { ayarliDegil: true };
   try{
     const transporter = mailTransporterOlustur(cfg);
-    await transporter.sendMail({ from: cfg.user, to, subject, text });
+    await zamanAsimliCalistir(transporter.sendMail({ from: cfg.user, to, subject, text }), 'Mail gönderimi 20 saniyede tamamlanamadı.', 20000);
     return { basarili: true };
   }catch(e){ return { error: e.message }; }
 });

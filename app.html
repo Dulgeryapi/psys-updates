@@ -513,7 +513,7 @@ const state = {
   personelAcikId: '', editPersonelId: null, editPersonelDraft: {}, personelDepartmanFiltre: '',
   izinF: { personelId:'', baslangic:'', bitis:'', sebep:'', tur:'Yıllık İzin', adres:'', telefon:'', baslangicSaat:'08:00', bitisSaat:'08:00', vekaletEdenId:'' },
   issozSablonOzel: null, issozSablonAd: '', muhasebeEmail: '',
-  mailAyarlariYerel: { ayarliMi:false, host:'', port:'', user:'' }, mailAyarlariForm: { host:'', port:'465', user:'', pass:'' },
+  mailAyarlariYerel: { ayarliMi:false, host:'', port:'', guvenlik:'ssl', user:'' }, mailAyarlariForm: { host:'', port:'465', guvenlik:'ssl', user:'', pass:'' },
   mlzsozSablonOzel: null, mlzsozSablonAd: '',
   mlzsozAcikId: '', mlzsozF: { kurumAdres:'', teslimatYeri:'', odemeSarti:'', cezaTutar:'', cezaTavan:'10', ozelMaddeler:'', imzaTarihi:'', teknikSartnameEk:'', fiyatFarkiVar:false, fiyatFarkiKalem:'', fiyatFarkiOran:'' },
   issozAcikId: '', issozF: { tcKimlik:'', babaAdi:'', dogumYeriTarihi:'', acikAdres:'', ucret:'', calisacagiBirim:'', sozlesmeSuresi:'1 YIL', denemeSuresi:'2 AY', zorunluHizmetSuresi:'1 YIL', imzaTarihi:'', zorunluBaslama:'', zorunluBitis:'' },
@@ -4751,14 +4751,14 @@ function renderManageTab(){
             ${state.editDepartmanId===d.id ? `
             <input type="text" value="${escapeHtml(state.editDepartmanDraft)}" oninput="onField('editDepartmanDraft', this.value)" style="flex:1;">
             <button class="icon-btn" onclick="saveEditDepartman('${d.id}')" title="Kaydet">✓</button>
-            <button class="icon-btn" onclick="onField('editDepartmanId', null)" title="Vazgeç">✕</button>` : `
+            <button class="icon-btn" onclick="state.editDepartmanId=null; render();" title="Vazgeç">✕</button>` : `
             <span class="mg-code">${escapeHtml(d.kod||'—')}</span>
             <span class="mg-ad">${escapeHtml(d.ad)}</span>
             <select style="max-width:180px;font-size:12px;" onchange="onDepartmanBolumYoneticisi('${d.id}', this.value)" title="Bölüm Yöneticisi — izin onayının son adımı">
               <option value="">Bölüm Yöneticisi yok</option>
               ${state.personeller.map(p=>`<option value="${p.id}" ${d.bolumYoneticisiId===p.id?'selected':''}>${escapeHtml(p.ad)}</option>`).join('')}
             </select>
-            <button class="icon-btn" onclick="onField('editDepartmanId','${d.id}'); onField('editDepartmanDraft','${escapeHtml(d.ad).replace(/'/g,'&#39;')}');" title="Düzenle">✎</button>
+            <button class="icon-btn" onclick="startEditDepartman('${d.id}', '${escapeHtml(d.ad).replace(/'/g,"&#39;")}')" title="Düzenle">✎</button>
             <button class="icon-btn del-btn" onclick="deleteDepartman('${d.id}')" title="Sil">✕</button>`}
           </div>`).join('') : '<div class="mg-empty">Henüz departman yok.</div>'}</div>
         <div class="row-add" style="grid-template-columns:1fr auto;">
@@ -4773,13 +4773,20 @@ function renderManageTab(){
         <h2><span class="num">📧</span>Mail Ayarları <small style="color:var(--muted);font-weight:400;">Bu bilgisayara özel — Yandex'e hiç senkron olmaz</small></h2>
         <div class="disabled-hint" style="margin-bottom:10px;">
           ${!hasMailAyarlari ? 'Bu özellik sadece kurulu masaüstü uygulamasında çalışır (tarayıcıda değil).' :
-            state.mailAyarlariYerel.ayarliMi ? `Durum: <b style="color:var(--accent-dark);">Ayarlandı</b> — ${escapeHtml(state.mailAyarlariYerel.user)} (${escapeHtml(state.mailAyarlariYerel.host)}:${state.mailAyarlariYerel.port}). Ayarlıyken izin bildirimleri otomatik gönderilir; ayarlı değilse mail programınız açılır, siz gönderirsiniz.` :
+            state.mailAyarlariYerel.ayarliMi ? `Durum: <b style="color:var(--accent-dark);">Ayarlandı</b> — ${escapeHtml(state.mailAyarlariYerel.user)} (${escapeHtml(state.mailAyarlariYerel.host)}:${state.mailAyarlariYerel.port}, ${state.mailAyarlariYerel.guvenlik==='ssl'?'SSL/TLS':state.mailAyarlariYerel.guvenlik==='starttls'?'STARTTLS':'güvenliksiz'}). Ayarlıyken izin bildirimleri otomatik gönderilir; ayarlı değilse mail programınız açılır, siz gönderirsiniz.` :
             'Durum: <b>Ayarlanmamış</b> — izin bildirimleri şu an mail programınızı açarak (mailto) çalışıyor. Aşağıyı doldurup kaydederseniz otomatik gönderime geçer.'}
         </div>
         ${hasMailAyarlari ? `
         <div class="row2" style="margin-bottom:10px;">
           <div class="field"><label>SMTP Sunucu</label><input type="text" value="${escapeHtml(state.mailAyarlariForm.host)}" oninput="onMailAyarlariForm('host', this.value)" placeholder="örn. mail.dulgeryapi.com.tr"></div>
           <div class="field"><label>Port</label><input type="text" inputmode="numeric" value="${escapeHtml(state.mailAyarlariForm.port)}" oninput="onMailAyarlariForm('port', this.value)" placeholder="465"></div>
+          <div class="field"><label>Bağlantı Güvenliği</label>
+            <select onchange="onMailAyarlariForm('guvenlik', this.value)">
+              <option value="ssl" ${state.mailAyarlariForm.guvenlik==='ssl'?'selected':''}>SSL/TLS (genelde port 465)</option>
+              <option value="starttls" ${state.mailAyarlariForm.guvenlik==='starttls'?'selected':''}>STARTTLS (genelde port 587)</option>
+              <option value="yok" ${state.mailAyarlariForm.guvenlik==='yok'?'selected':''}>Yok (şifresiz)</option>
+            </select>
+          </div>
         </div>
         <div class="row2" style="margin-bottom:10px;">
           <div class="field"><label>Kullanıcı Adı (e-posta)</label><input type="email" value="${escapeHtml(state.mailAyarlariForm.user)}" oninput="onMailAyarlariForm('user', this.value)" placeholder="yazilim@dulgeryapi.com.tr"></div>
@@ -5051,8 +5058,8 @@ function renderHomeTab(){
   return `
     <div class="home-wrap">
       <div class="home-hero">
-        <div class="home-hero-logo">${LOGO_DATA_URI ? '<img src="'+LOGO_DATA_URI+'" alt="logo">' : 'PSYS'}</div>
-        <h2>Kurumsal Üretim Sistemleri</h2>
+        <div class="home-hero-logo">${(()=>{ const dlg = SEED_SIRKETLER.find(s=>s.kodu==='DLG'); return dlg && dlg.logo ? '<img src="'+dlg.logo+'" alt="logo" style="max-height:72px;max-width:220px;object-fit:contain;">' : 'PSYS'; })()}</div>
+        <h2 style="color:var(--primary);margin-top:10px;">Hoş Geldiniz</h2>
       </div>
       <div class="home-dep-icon-grid">${depHtml}</div>
       <div class="home-fixed-row">
@@ -5447,6 +5454,43 @@ function butceMM03Ozet(projeKoduParam){
       kalan: (g.planlanan||0) - (g.gerceklesen||0)
     };
   }).sort((a,b)=>a.mm03.localeCompare(b.mm03));
+}
+function butceGerceklesenler(projeKoduParam){
+  const projeKodu = projeKoduParam || state.butceProjeFiltre;
+  const proje = getProjeObj(projeKodu);
+  const satirlar = [];
+  state.hakedisler.filter(h=>h.projeKodu===projeKodu).forEach(h=>{
+    h.satirlar.forEach(s=>{
+      if(!(s.buDonemMiktar>0)) return;
+      const mm03 = (s.aktivite||'').slice(0,5);
+      const mm03obj = state.mm03List.find(m=>m.mm03===mm03);
+      satirlar.push({
+        hakedisId: h.hakedisId, hakedisNo: h.hakedisNo, donem: h.donem,
+        projeKodu: proje?proje.kodu:projeKodu, projeAdi: proje?proje.ad:'',
+        mm01: mm03obj?mm03obj.mm01:'', mm01ad: mm03obj?mm03obj.mm01ad:'',
+        mm02: mm03obj?mm03obj.mm02:'', mm02ad: mm03obj?mm03obj.mm02ad:'',
+        mm03: mm03, mm03ad: mm03obj?mm03obj.mm03ad:mm03Tanimi(mm03),
+        aktivite: s.aktivite||'', pozNo: s.pozNo||'', pozTanimi: s.pozTanimi||'', birim: s.birim||'',
+        birimFiyat: s.birimFiyat||0, miktar: s.buDonemMiktar||0, tutar: (s.buDonemMiktar||0)*(s.birimFiyat||0)
+      });
+    });
+  });
+  return satirlar.sort((a,b)=> a.hakedisNo-b.hakedisNo || (a.pozNo||'').localeCompare(b.pozNo||''));
+}
+function butceGerceklesenExcel(){
+  const satirlar = butceGerceklesenler();
+  if(!satirlar.length){ showToast('Aktarılacak kayıt yok.'); return; }
+  const data = satirlar.map(s=>({
+    'Hakediş No': s.hakedisNo, 'Dönem': s.donem, 'Proje Kodu': s.projeKodu, 'Proje Adı': s.projeAdi,
+    'MM1': s.mm01, 'MM1 Adı': s.mm01ad, 'MM2': s.mm02, 'MM2 Adı': s.mm02ad, 'MM3': s.mm03, 'MM3 Adı': s.mm03ad,
+    'Aktivite': s.aktivite, 'Poz No': s.pozNo, 'Poz Tanımı': s.pozTanimi, 'Birim': s.birim,
+    'Birim Fiyat': s.birimFiyat, 'Miktar': s.miktar, 'Tutar': s.tutar
+  }));
+  const ws = XLSX.utils.json_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Gerçekleşen');
+  const proje = getProjeObj(state.butceProjeFiltre);
+  XLSX.writeFile(wb, `Hakedis Gerceklesenleri - ${proje?proje.ad:state.butceProjeFiltre}.xlsx`);
 }
 function mm03Tanimi(mm03){
   const found = state.mm03List.find(m=>m.mm03===mm03);
@@ -6386,6 +6430,7 @@ function renderButceTab(){
   const ozet = projeKodu ? butceMM03Ozet() : [];
   const toplamPlanlanan = ozet.reduce((s,o)=>s+o.planlanan,0);
   const toplamGerceklesen = ozet.reduce((s,o)=>s+o.gerceklesen,0);
+  const gerceklesenler = projeKodu ? butceGerceklesenler() : [];
 
   const kesifRows = kesif.map(k=>`
     <tr style="${k.eslesmediMi?'background:#fff3f0;':''}">
@@ -6479,6 +6524,23 @@ function renderButceTab(){
           <thead><tr><th>MM03</th><th>Tanım</th><th style="text-align:right;">Planlanan</th><th style="text-align:right;">Gerçekleşen</th><th style="text-align:right;">Kalan</th></tr></thead>
           <tbody>${ozetRows}</tbody>
           <tfoot><tr style="font-weight:700;border-top:2px solid var(--border);"><td colspan="2">TOPLAM</td><td style="text-align:right;">${paraTR(toplamPlanlanan)}</td><td style="text-align:right;">${paraTR(toplamGerceklesen)}</td><td style="text-align:right;">${paraTR(toplamPlanlanan-toplamGerceklesen)}</td></tr></tfoot>
+        </table>
+      </div>
+    </div>` : ''}
+    ${gerceklesenler.length ? `
+    <div class="card">
+      <h2><span class="num">6</span>Hakediş Gerçekleşenleri <small>${gerceklesenler.length} kalem — her hakedişteki kalem ayrı satır</small>
+        <button class="btn btn-ghost btn-sm" style="float:right;" onclick="butceGerceklesenExcel()">⬇ Excel'e Aktar</button>
+      </h2>
+      <div class="table-wrap" style="box-shadow:none;">
+        <table>
+          <thead><tr><th>Hakediş No</th><th>Dönem</th><th>MM1</th><th>MM2</th><th>MM3</th><th>Aktivite</th><th>Poz No</th><th>Tanım</th><th>Birim</th><th style="text-align:right;">Birim Fiyat</th><th style="text-align:right;">Miktar</th><th style="text-align:right;">Tutar</th></tr></thead>
+          <tbody>${gerceklesenler.map(s=>`<tr>
+            <td>${s.hakedisNo}</td><td>${s.donem}</td><td>${escapeHtml(s.mm01)}</td><td>${escapeHtml(s.mm02)}</td><td>${escapeHtml(s.mm03)}</td>
+            <td>${escapeHtml(s.aktivite)}</td><td>${escapeHtml(s.pozNo)}</td><td>${escapeHtml(s.pozTanimi)}</td><td>${escapeHtml(s.birim)}</td>
+            <td style="text-align:right;">${paraTR(s.birimFiyat)}</td><td style="text-align:right;">${mhFmt(s.miktar)}</td><td style="text-align:right;font-weight:600;">${paraTR(s.tutar)}</td>
+          </tr>`).join('')}</tbody>
+          <tfoot><tr style="font-weight:700;border-top:2px solid var(--border);"><td colspan="11">TOPLAM</td><td style="text-align:right;">${paraTR(gerceklesenler.reduce((a,s)=>a+s.tutar,0))}</td></tr></tfoot>
         </table>
       </div>
     </div>` : ''}
@@ -7718,6 +7780,7 @@ function addDepartman(){
   state.newDepartmanAd='';
   saveDepartmanlar(); render();
 }
+function startEditDepartman(id, ad){ state.editDepartmanId = id; state.editDepartmanDraft = ad; render(); }
 function saveEditDepartman(id){
   const d = state.departmanlar.find(x=>x.id===id); if(!d) return;
   const ad = formatCumleTR(state.editDepartmanDraft.trim());
@@ -8451,8 +8514,8 @@ async function mailAyarlariYukle(){
   if(!hasMailAyarlari) return;
   try{
     const r = await window.mailAyarlari.oku();
-    state.mailAyarlariYerel = { ayarliMi: !!r.ayarliMi, host: r.host||'', port: r.port||'', user: r.user||'' };
-    if(r.ayarliMi){ state.mailAyarlariForm.host = r.host||''; state.mailAyarlariForm.port = String(r.port||'465'); state.mailAyarlariForm.user = r.user||''; }
+    state.mailAyarlariYerel = { ayarliMi: !!r.ayarliMi, host: r.host||'', port: r.port||'', guvenlik: r.guvenlik||'ssl', user: r.user||'' };
+    if(r.ayarliMi){ state.mailAyarlariForm.host = r.host||''; state.mailAyarlariForm.port = String(r.port||'465'); state.mailAyarlariForm.guvenlik = r.guvenlik||'ssl'; state.mailAyarlariForm.user = r.user||''; }
     render();
   }catch(e){}
 }
@@ -8460,7 +8523,7 @@ async function mailAyarlariKaydet(){
   const f = state.mailAyarlariForm;
   if(!f.host.trim() || !f.port || !f.user.trim() || !f.pass){ showToast('Tüm alanları doldurun (Sunucu, Port, Kullanıcı Adı, Şifre).'); return; }
   try{
-    const sonuc = await window.mailAyarlari.kaydet({ host: f.host.trim(), port: Number(f.port), user: f.user.trim(), pass: f.pass });
+    const sonuc = await window.mailAyarlari.kaydet({ host: f.host.trim(), port: Number(f.port), guvenlik: f.guvenlik, user: f.user.trim(), pass: f.pass });
     if(sonuc && sonuc.basarili){
       showToast('Mail ayarları kaydedildi. Test maili göndererek doğrulamanızı öneririz.');
       state.mailAyarlariForm.pass = '';
@@ -8484,7 +8547,7 @@ async function mailAyarlariSifirla(){
   try{
     await window.mailAyarlari.sifirla();
     state.mailAyarlariYerel = { ayarliMi:false, host:'', port:'', user:'' };
-    state.mailAyarlariForm = { host:'', port:'465', user:'', pass:'' };
+    state.mailAyarlariForm = { host:'', port:'465', guvenlik:'ssl', user:'', pass:'' };
     showToast('Mail ayarları silindi.');
     render();
   }catch(e){}
