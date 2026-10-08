@@ -6523,6 +6523,11 @@ function renderButceTab(){
       <button class="btn btn-ghost" onclick="exportTumProjelerButceKarsilastirma()">⬇ Tüm Projeler — Bütçe Karşılaştırması (Excel)</button>
       <div class="disabled-hint" style="margin-top:6px;">Keşif oluşturulmuş tüm projelerin MM1/MM2/MM3 bazında Planlanan/Gerçekleşen/Kalan verisini tek Excel'de dışa aktarır.</div>
     </div>
+    <div style="display:flex;align-items:center;gap:10px;margin:22px 0 14px;">
+      <span style="font-size:18px;">📐</span>
+      <div style="font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--primary);">Keşif Oluştur</div>
+    </div>
+    <div style="height:1px;background:var(--border);margin-bottom:16px;"></div>
     <div class="card" style="margin-bottom:16px;">
       <h2><span class="num">1</span>Proje Seç</h2>
       <select onchange="onFieldRender('butceProjeFiltre', this.value)" style="max-width:400px;">
@@ -6570,6 +6575,11 @@ function renderButceTab(){
       </div>
     </div>` : ''}
     ${gerceklesenler.length ? `
+    <div style="display:flex;align-items:center;gap:10px;margin:28px 0 14px;">
+      <span style="font-size:18px;">📊</span>
+      <div style="font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--primary);">Hakediş Gerçekleşenleri</div>
+    </div>
+    <div style="height:1px;background:var(--border);margin-bottom:16px;"></div>
     <div class="card">
       <h2><span class="num">6</span>Hakediş Gerçekleşenleri <small>${gerceklesenler.length} kalem — her hakedişteki kalem ayrı satır</small>
         <button class="btn btn-ghost btn-sm" style="float:right;" onclick="butceGerceklesenExcel()">⬇ Excel'e Aktar</button>
