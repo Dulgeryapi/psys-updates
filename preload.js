@@ -28,6 +28,10 @@ contextBridge.exposeInMainWorld('electronPDF', {
   savePDF: (suggestedName) => ipcRenderer.invoke('save-pdf', suggestedName)
 });
 
+contextBridge.exposeInMainWorld('kaynakDosya', {
+  indir: () => ipcRenderer.invoke('kaynak-dosya-indir')
+});
+
 contextBridge.exposeInMainWorld('guncelleme', {
   onHazir: (callback) => ipcRenderer.on('guncelleme-hazir', () => callback()),
   yenidenBaslat: () => ipcRenderer.invoke('guncelleme-yeniden-baslat')

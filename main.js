@@ -194,6 +194,20 @@ ipcMain.handle('mail-gonder', async (event, { to, subject, text }) => {
   }catch(e){ return { error: e.message }; }
 });
 
+ipcMain.handle('kaynak-dosya-indir', async () => {
+  try{
+    const kaynak = path.join(__dirname, 'app.html');
+    const bugun = new Date().toISOString().slice(0,10);
+    const { filePath, canceled } = await dialog.showSaveDialog({
+      title: 'Program Kaynak Dosyasını Kaydet',
+      defaultPath: `Kurumsal Uretim Sistemleri - Kaynak Kod (${bugun}).html`,
+      filters: [{ name: 'HTML Dosyası', extensions: ['html'] }]
+    });
+    if(canceled || !filePath) return { iptal: true };
+    fs.copyFileSync(kaynak, filePath);
+    return { basarili: true, yol: filePath };
+  }catch(e){ return { error: e.message }; }
+});
 ipcMain.handle('save-pdf', async (event, suggestedName) => {
   try{
     const safeName = String(suggestedName || 'belge').replace(/[\\/:*?"<>|]/g, '').trim() || 'belge';

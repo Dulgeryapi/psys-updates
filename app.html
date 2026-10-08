@@ -5104,6 +5104,12 @@ function renderManageTab(){
       </div>
     </div>
 
+    <div class="card" style="margin-bottom:16px;">
+      <h2><span class="num">💾</span>Program Kaynak Dosyasını İndir <small>Claude ile ileride çalışmak için saklayın</small></h2>
+      <div class="disabled-hint" style="margin-bottom:10px;">${!hasKaynakDosya ? 'Bu özellik sadece kurulu masaüstü uygulamasında çalışır (tarayıcıda değil).' : 'Programın çalıştığı .html dosyasının bir kopyasını bilgisayarınıza kaydeder. İleride Claude ile bu program üzerinde çalışmak isterseniz, bu dosyayı yeni bir sohbete yükleyip kaldığınız yerden devam edebilirsiniz.'}</div>
+      ${hasKaynakDosya ? `<button class="btn btn-ghost btn-sm" onclick="kaynakDosyaIndir()">⬇ Kaynak Dosyasını Kaydet (.html)</button>` : ''}
+    </div>
+
     <div class="card">
         <h2><span class="num">📧</span>Mail Ayarları <small style="color:var(--muted);font-weight:400;">Bu bilgisayara özel — Yandex'e hiç senkron olmaz</small></h2>
         <div class="disabled-hint" style="margin-bottom:10px;">
@@ -8095,6 +8101,15 @@ function izinKaydet(pid){
   }
 }
 const hasMailAyarlari = typeof window !== 'undefined' && !!window.mailAyarlari;
+const hasKaynakDosya = typeof window !== 'undefined' && !!window.kaynakDosya;
+async function kaynakDosyaIndir(){
+  if(!hasKaynakDosya) return;
+  try{
+    const sonuc = await window.kaynakDosya.indir();
+    if(sonuc && sonuc.basarili) showToast('Kaynak dosyası kaydedildi:', sonuc.yol);
+    else if(sonuc && sonuc.error) showToast('Kaydedilemedi:', sonuc.error);
+  }catch(e){ showToast('Kaydedilemedi:', e.message); }
+}
 async function izinMailGonder(email, konu, govde, mailtoYedek){
   if(hasMailAyarlari){
     try{
