@@ -498,7 +498,7 @@ const state = {
   sozWordIl: '', sozWordIlce: '', sozWordAda: '', sozWordParsel: '', sozWordPaftaKod: '',
   sozWordDraftlar: {}, sozWordHazirId: '',
   metrajlar: [], birimFiyatlar: [], kesifSonuclar: {}, butceProjeFiltre: '', butceAltSekme: 'kesif',
-  hkDigerAcik: true,
+  hkDigerAcik: true, hkYeniFormAcik: false,
   mh: null, mhSekme: 'talepler', mhF: mhBosForm(), mhAcikTalepId: '', mhTeklifTalepId: '',
   mhC: { yerId:'', kartId:'', miktar:'', tarih:'', kim:'', is:'', projeKodu:'' },
   mhG: { yerId:'', kartId:'', miktar:'', fiyat:'', not:'' },
@@ -2055,13 +2055,15 @@ function startNewHakedis(){
   showToast('Yeni hakediş oluşturuldu:', h.hakedisId + (agac.length ? ` — ${agac.length} satır Aktivite Ağacı'ndan otomatik geldi.` : ' — Aktivite Ağacı henüz kurulmamış, satırları elle ekleyin ya da önce ağacı kurun.'));
   render();
 }
-function selectAktifHakedis(id){ if(!id) state.hkDigerAcik = true; state.aktifHakedisId = id || null; state.hakedisAltTab='hakedis'; render(); }
+function selectAktifHakedis(id){ if(!id) state.hkYeniFormAcik = false; state.aktifHakedisId = id || null; state.hakedisAltTab='hakedis'; render(); }
+function hkYeniFormAc(){ state.hkYeniFormAcik = true; render(); }
+function hkYeniFormKapat(){ state.hkYeniFormAcik = false; render(); }
 function hakedisKopyala(id){
   const h = state.hakedisler.find(x=>x.id===id); if(!h || h.statu!=='Kapatıldı') return;
   const sonraki = hakedislerOf(h.projeKodu, h.ustaId).find(x=>x.hakedisNo===h.hakedisNo+1);
   if(sonraki){ showToast('Sonraki dönem zaten oluşturulmuş:', sonraki.hakedisId); state.aktifHakedisId = sonraki.id; state.hkDigerAcik = false; render(); return; }
   state.aktifHakedisId = null;
-  state.hkDigerAcik = true;
+  state.hkYeniFormAcik = true;
   onFieldRender('newHkProjeKodu', h.projeKodu);
   onFieldRender('newHkUstaId', h.ustaId);
   onFieldRender('newHkSirketKodu', h.sirketKodu);
@@ -5136,13 +5138,10 @@ function renderHakedisSecEkrani(){
   const sirketOpts = state.sirketler.map(s=>`<option value="${s.kodu}" ${state.newHkSirketKodu===s.kodu?'selected':''}>${s.kodu} — ${escapeHtml(s.ad)}</option>`).join('');
   const turOpts = state.hakedisTurleri.map(t=>`<option value="${t}" ${state.newHkTuru===t?'selected':''}>${t}</option>`).join('');
   const isTuruOpts = state.yapilanIsTurleri.map(t=>`<option value="${t}" ${state.newHkIsTuru===t?'selected':''}>${t}</option>`).join('');
-  return `
-    <div class="page-head">
-      <h1>📊 Hakediş</h1>
-      <p>Devam eden bir hakedişi seçin ya da yeni bir hakediş başlatın.</p>
-    </div>
+  const yeniFormHtml = `
     <div class="card" style="margin-bottom:16px;">
-      <h2><span class="num">1</span>Yeni Hakediş Başlat</h2>
+      <h2><span class="num">+</span>Yeni Hakediş Başlat <button class="icon-btn" onclick="hkYeniFormKapat()" title="Kapat" style="float:right;">✕</button></h2>
+      ${(state.newHkProjeKodu && state.newHkUstaId) ? `<div class="disabled-hint" style="margin-bottom:10px;background:var(--primary-tint);color:var(--primary);font-weight:600;">Bu hakediş, <b>No: ${hakedislerOf(state.newHkProjeKodu, state.newHkUstaId).length + 1}</b> olarak oluşacak (otomatik, değiştirilemez).</div>` : ''}
       <div class="row2" style="margin-bottom:8px;">
         <div class="field"><label>Proje</label>
           <select onchange="state.hkDigerAcik=true; onFieldRender('newHkProjeKodu', this.value)"><option value="">— Seçiniz —</option>${projeOpts}</select>
@@ -5234,10 +5233,10 @@ function renderHakedisSecEkrani(){
         <button class="btn btn-publish" onclick="startNewHakedis()">⬆ Yeni Hakediş Başlat</button>
         <span class="req-note">Sözleşme Bedeli, seçilen tedarikçinin Teyit Formlarından otomatik toplanır.</span>
       </div>
-    </div>
-
+    </div>`;
+  const listeHtml = `
     <div class="card">
-      <h2><span class="num">2</span>Mevcut Hakedişler <small>${state.hakedisler.length} kayıt, ${acikListe.length} açık</small></h2>
+      <h2><span class="num">1</span>Mevcut Hakedişler <small>${state.hakedisler.length} kayıt, ${acikListe.length} açık</small></h2>
       ${topluBar('hakedis','hakedisA',state.hakedisler.map(x=>x.id),'Seçilenleri Sil')}
       <div class="table-wrap" style="box-shadow:none;border:1px solid var(--border);">
         <table>
@@ -5245,7 +5244,17 @@ function renderHakedisSecEkrani(){
           <tbody>${rows || '<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:20px;">Henüz hakediş yok.</td></tr>'}</tbody>
         </table>
       </div>
+    </div>`;
+  return `
+    <div class="page-head" style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;">
+      <div>
+        <h1>📊 Hakediş</h1>
+        <p>Devam eden bir hakedişi seçin ya da yeni bir hakediş başlatın.</p>
+      </div>
+      ${!state.hkYeniFormAcik ? `<button class="btn btn-publish" onclick="hkYeniFormAc()" style="flex-shrink:0;">+ Yeni Oluştur</button>` : ''}
     </div>
+    ${state.hkYeniFormAcik ? yeniFormHtml : ''}
+    ${listeHtml}
   `;
 }
 
