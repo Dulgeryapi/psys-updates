@@ -497,7 +497,7 @@ const state = {
   sozWordNotTeminat: '', sozWordNotIsProgrami: '', sozWordNotHakedisOdemeleri: '',
   sozWordIl: '', sozWordIlce: '', sozWordAda: '', sozWordParsel: '', sozWordPaftaKod: '',
   sozWordDraftlar: {}, sozWordHazirId: '',
-  metrajlar: [], birimFiyatlar: [], kesifSonuclar: {}, butceProjeFiltre: '',
+  metrajlar: [], birimFiyatlar: [], kesifSonuclar: {}, butceProjeFiltre: '', butceAltSekme: 'kesif',
   hkDigerAcik: true,
   mh: null, mhSekme: 'talepler', mhF: mhBosForm(), mhAcikTalepId: '', mhTeklifTalepId: '',
   mhC: { yerId:'', kartId:'', miktar:'', tarih:'', kim:'', is:'', projeKodu:'' },
@@ -6523,11 +6523,6 @@ function renderButceTab(){
       <button class="btn btn-ghost" onclick="exportTumProjelerButceKarsilastirma()">⬇ Tüm Projeler — Bütçe Karşılaştırması (Excel)</button>
       <div class="disabled-hint" style="margin-top:6px;">Keşif oluşturulmuş tüm projelerin MM1/MM2/MM3 bazında Planlanan/Gerçekleşen/Kalan verisini tek Excel'de dışa aktarır.</div>
     </div>
-    <div style="display:flex;align-items:center;gap:10px;margin:22px 0 14px;">
-      <span style="font-size:18px;">📐</span>
-      <div style="font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--primary);">Keşif Oluştur</div>
-    </div>
-    <div style="height:1px;background:var(--border);margin-bottom:16px;"></div>
     <div class="card" style="margin-bottom:16px;">
       <h2><span class="num">1</span>Proje Seç</h2>
       <select onchange="onFieldRender('butceProjeFiltre', this.value)" style="max-width:400px;">
@@ -6536,6 +6531,11 @@ function renderButceTab(){
       </select>
     </div>
     ${!projeKodu ? '' : `
+    <div style="display:flex;gap:4px;margin-bottom:16px;">
+      <button class="tab-btn ${state.butceAltSekme==='kesif'?'active':''}" style="font-size:12.5px;padding:8px 14px;" onclick="onFieldRender('butceAltSekme','kesif')">📐 Keşif Oluştur</button>
+      <button class="tab-btn ${state.butceAltSekme==='gerceklesen'?'active':''}" style="font-size:12.5px;padding:8px 14px;" onclick="onFieldRender('butceAltSekme','gerceklesen')">📊 Hakediş Gerçekleşenleri</button>
+    </div>
+    ${state.butceAltSekme==='kesif' ? `
     <div class="card" style="margin-bottom:16px;">
       <h2><span class="num">2</span>Metraj İçe Aktar <small>${metrajSayisi} satır yüklü</small></h2>
       <div class="disabled-hint" style="margin-bottom:8px;">"mış format" şablonu: BLOK ADI, FAZ_ADI, PAFTA NO, POZ_NO, POZ_TANIMI, ACIKLAMA, BIRIM, ACTCODE, ACTID, MM03, KAT, MAHAL, MAHAL_KODU, H_BENZER, H_ADET, H_SIMETRI, H_BOY, H_EN, H_YÜKSEKLİK, MİKTAR. Aynı poza ait birden fazla satır (ör. bir ölçü + bir minha/eksi satırı) olabilir — Keşfi Oluştur'da Poz No bazında toplanır.</div>
@@ -6574,16 +6574,12 @@ function renderButceTab(){
         </table>
       </div>
     </div>` : ''}
-    ${gerceklesenler.length ? `
-    <div style="display:flex;align-items:center;gap:10px;margin:28px 0 14px;">
-      <span style="font-size:18px;">📊</span>
-      <div style="font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--primary);">Hakediş Gerçekleşenleri</div>
-    </div>
-    <div style="height:1px;background:var(--border);margin-bottom:16px;"></div>
+    ` : `
     <div class="card">
-      <h2><span class="num">6</span>Hakediş Gerçekleşenleri <small>${gerceklesenler.length} kalem — her hakedişteki kalem ayrı satır</small>
-        <button class="btn btn-ghost btn-sm" style="float:right;" onclick="butceGerceklesenExcel()">⬇ Excel'e Aktar</button>
+      <h2>Hakediş Gerçekleşenleri ${gerceklesenler.length ? `<small>${gerceklesenler.length} kalem — her hakedişteki kalem ayrı satır</small>` : ''}
+        ${gerceklesenler.length ? `<button class="btn btn-ghost btn-sm" style="float:right;" onclick="butceGerceklesenExcel()">⬇ Excel'e Aktar</button>` : ''}
       </h2>
+      ${!gerceklesenler.length ? `<div class="mg-empty">Bu projede henüz gerçekleşen (kapatılmış/işlenmiş hakediş) kaydı yok.</div>` : `
       <div class="table-wrap" style="box-shadow:none;">
         <table>
           <thead><tr><th>Hakediş No</th><th>Bitiş Tarihi</th><th>Dönem</th><th>Kaynak</th><th>MM1</th><th>MM2</th><th>MM3</th><th>Aktivite</th><th>Poz No</th><th>Tanım</th><th>Birim</th><th style="text-align:right;">Birim Fiyat</th><th style="text-align:right;">Miktar</th><th style="text-align:right;">Tutar</th></tr></thead>
@@ -6594,8 +6590,9 @@ function renderButceTab(){
           </tr>`).join('')}</tbody>
           <tfoot><tr style="font-weight:700;border-top:2px solid var(--border);"><td colspan="13">TOPLAM</td><td style="text-align:right;">${paraTR(gerceklesenler.reduce((a,s)=>a+s.tutar,0))}</td></tr></tfoot>
         </table>
-      </div>
-    </div>` : ''}
+      </div>`}
+    </div>
+    `}
     `}
   `;
 }
