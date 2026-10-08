@@ -125,6 +125,29 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   .hk-ifs-alan input, .hk-ifs-alan select, .hk-ifs-alan textarea{ width:100%; font-size:12.5px; padding:4px 6px; border:1px solid var(--border); border-radius:6px; background:var(--surface); }
   .hk-ifs-alan input:disabled{ background:#f3f1f6; color:var(--muted); }
   .hk-ifs-deger{ font-size:12.5px; padding:4px 0; color:var(--text); min-height:20px; }
+
+  /* ---------- organizasyon semasi (org chart) ---------- */
+  .org-chart-wrap{ overflow-x:auto; padding:30px 10px; }
+  .org-chart, .org-chart ul{ list-style:none; margin:0; padding:0; position:relative; display:flex; justify-content:center; }
+  .org-chart ul{ padding-top:20px; }
+  .org-chart li{ position:relative; padding:0 10px; display:flex; flex-direction:column; align-items:center; }
+  .org-chart li ul li::before, .org-chart li ul li::after{ content:''; position:absolute; top:0; right:50%; border-top:2px solid var(--border); width:50%; height:20px; }
+  .org-chart li ul li::after{ right:auto; left:50%; border-left:2px solid var(--border); }
+  .org-chart li ul li:only-child::after, .org-chart li ul li:only-child::before{ display:none; }
+  .org-chart li ul li:first-child::before{ border:0 none; }
+  .org-chart li ul li:first-child::after{ border-radius:5px 0 0 0; }
+  .org-chart li ul li:last-child::after{ border:0 none; }
+  .org-chart li ul li:last-child::before{ border-right:2px solid var(--border); border-radius:0 5px 0 0; }
+  .org-chart > li::before, .org-chart > li::after{ display:none !important; }
+  .org-chart ul::before{ content:''; position:absolute; top:0; left:50%; border-left:2px solid var(--border); width:0; height:20px; }
+  .org-chart li:only-child{ padding-top:0; }
+  .org-chart li:only-child > ul::before{ display:none; }
+  .org-kutu{ border:1px solid var(--border); border-radius:10px; padding:10px 14px; background:var(--surface); cursor:pointer;
+    min-width:150px; text-align:center; box-shadow:var(--shadow); transition:border-color .12s, transform .12s; }
+  .org-kutu:hover{ border-color:var(--primary); transform:translateY(-2px); }
+  .org-ad{ font-weight:700; font-size:13px; color:var(--primary-dark); }
+  .org-unvan{ font-size:11.5px; color:var(--muted); margin-top:1px; }
+  .org-dept{ font-size:11px; color:var(--primary); margin-top:3px; }
   .home-motto{ text-align:center; margin-top:40px; padding-top:22px; border-top:1px solid #3a2f4a;
     font-family:'Space Grotesk',sans-serif; font-style:italic; font-size:14px; color:#b478c9; letter-spacing:.2px; }
   .build-credit{ position:fixed; right:14px; bottom:10px; font-size:10.5px; color:var(--muted); opacity:.65;
@@ -517,7 +540,7 @@ const state = {
   editPozIdx: null, editPozDraft: { pozTanimi:'', birim:'', tur:'' },
   personeller: [], izinKayitlari: [],
   newPersonelAd:'', newPersonelSirketKodu:'', newPersonelDepartmanId:'', newPersonelTitle:'', newPersonelYoneticiId:'', newPersonelToplamIzin:'14', newPersonelEmail:'',
-  personelAcikId: '', editPersonelId: null, editPersonelDraft: {}, personelDepartmanFiltre: '',
+  personelAcikId: '', editPersonelId: null, editPersonelDraft: {}, personelDepartmanFiltre: '', personelOrgAcik: false,
   izinF: { personelId:'', baslangic:'', bitis:'', sebep:'', tur:'Yıllık İzin', adres:'', telefon:'', baslangicSaat:'08:00', bitisSaat:'08:00', vekaletEdenId:'' },
   issozSablonOzel: null, issozSablonAd: '', muhasebeEmail: '',
   mailAyarlariYerel: { ayarliMi:false, host:'', port:'', guvenlik:'ssl', user:'' }, mailAyarlariForm: { host:'', port:'465', guvenlik:'ssl', user:'', pass:'' }, mailAyarlariSifreGoster: false,
@@ -8217,7 +8240,66 @@ function renderPersonelOzetKarti(p){
   </div>`;
 }
 function onPersonelDepartmanFiltre(id){ state.personelDepartmanFiltre = id; state.personelAcikId=''; render(); }
+function personelOrgAgaci(){
+  const map = {};
+  state.personeller.forEach(p => { map[p.id] = { ...p, children: [] }; });
+  const roots = [];
+  state.personeller.forEach(p => {
+    if(p.yoneticiId && map[p.yoneticiId]){
+      map[p.yoneticiId].children.push(map[p.id]);
+    } else {
+      roots.push(map[p.id]);
+    }
+  });
+  return roots;
+}
+function personelOrgNode(p){
+  const childrenHtml = p.children.length ? `<ul>${p.children.map(c=>personelOrgNode(c)).join('')}</ul>` : '';
+  return `<li>
+    <div class="org-kutu" onclick="personelOrgKisiAc('${p.id}')" title="Kartını açmak için tıklayın">
+      <div class="org-ad">${escapeHtml(p.ad)}</div>
+      <div class="org-unvan">${escapeHtml(p.title)||'—'}</div>
+      <div class="org-dept">${escapeHtml(departmanAd(p.departmanId))}</div>
+    </div>
+    ${childrenHtml}
+  </li>`;
+}
+function personelOrgKisiAc(id){ state.personelOrgAcik = false; personelAc(id); }
+function personelOrgSemasiAc(){ state.personelOrgAcik = true; render(); }
+function personelOrgSemasiKapat(){ state.personelOrgAcik = false; render(); }
+function renderPersonelOrgSemasi(){
+  const roots = personelOrgAgaci();
+  return `
+    <div class="page-head">
+      <h1>🧑‍💼 Organizasyon Şeması</h1>
+      <p>Personel kayıtlarındaki "Bağlı Olduğu Yönetici" ilişkisinden otomatik oluşturulur. Bir kutuya tıklayınca o kişinin kartı açılır.</p>
+    </div>
+    <div class="actions" style="margin-bottom:16px;">
+      <button class="btn btn-ghost" onclick="personelOrgSemasiKapat()">‹ Listeye Dön</button>
+      <button class="btn btn-ghost" onclick="printPersonelOrgSemasi()">🖨 Yazdır / PDF</button>
+    </div>
+    ${roots.length ? `
+    <div class="org-chart-wrap">
+      <ul class="org-chart">
+        ${roots.map(r=>personelOrgNode(r)).join('')}
+      </ul>
+    </div>` : `<div class="mg-empty">Henüz personel kaydı yok.</div>`}
+  `;
+}
+function printPersonelOrgSemasi(){
+  const roots = personelOrgAgaci();
+  const html = `
+    <div class="print-doc" style="max-width:100%;">
+      <div class="print-header">
+        <div style="display:flex;align-items:center;gap:14px;">${LOGO_DATA_URI ? `<img src="${LOGO_DATA_URI}" style="height:40px;">` : ''}</div>
+        <h1 style="text-align:right;">ORGANİZASYON<br>ŞEMASI</h1>
+      </div>
+      ${roots.length ? `<ul class="org-chart">${roots.map(r=>personelOrgNode(r)).join('')}</ul>` : '<p>Henüz personel kaydı yok.</p>'}
+    </div>`;
+  printWithTitle(html, 'Organizasyon Şeması');
+}
 function renderPersonelTab(){
+  if(state.personelOrgAcik) return renderPersonelOrgSemasi();
   const depFiltre = state.personelDepartmanFiltre || '';
   const depSayilari = state.departmanlar.map(d=>({ d, sayi: state.personeller.filter(p=>p.departmanId===d.id).length }));
   const gosterilecekler = depFiltre ? state.personeller.filter(p=>p.departmanId===depFiltre) : state.personeller;
@@ -8265,7 +8347,9 @@ function renderPersonelTab(){
       <div class="actions"><button class="btn btn-publish" onclick="addPersonel()">+ Personel Ekle</button></div>
     </div>
     <div class="card">
-      <h2><span class="num">2</span>Personel Listesi <small>${gosterilecekler.length} / ${state.personeller.length} kayıt — karta tıklayın</small></h2>
+      <h2><span class="num">2</span>Personel Listesi <small>${gosterilecekler.length} / ${state.personeller.length} kayıt — karta tıklayın</small>
+        <button class="btn btn-ghost btn-sm" style="float:right;" onclick="personelOrgSemasiAc()">🧑‍💼 Organizasyon Şeması</button>
+      </h2>
       <div style="display:flex;gap:18px;align-items:flex-start;">
         ${depListesi}
         <div style="flex:1;min-width:0;">${kartlar}</div>
