@@ -5250,36 +5250,31 @@ function renderHakedisSecEkrani(){
     <div class="card" style="margin-bottom:16px;">
       <h2><span class="num">+</span>Yeni Hakediş Başlat <button class="icon-btn" onclick="hkYeniFormKapat()" title="Kapat" style="float:right;">✕</button></h2>
       ${(state.newHkProjeKodu && state.newHkUstaId) ? `<div class="disabled-hint" style="margin-bottom:10px;background:var(--primary-tint);color:var(--primary);font-weight:600;">Bu hakediş, <b>No: ${hakedislerOf(state.newHkProjeKodu, state.newHkUstaId).length + 1}</b> olarak oluşacak (otomatik, değiştirilemez).</div>` : ''}
-      <div class="row2" style="margin-bottom:8px;">
-        <div class="field"><label>Proje</label>
+      <div class="hk-ifs-grid">
+        <div class="hk-ifs-alan"><label>Proje</label>
           <select onchange="state.hkDigerAcik=true; onFieldRender('newHkProjeKodu', this.value)"><option value="">— Seçiniz —</option>${projeOpts}</select>
         </div>
-        <div class="field"><label>Tedarikçi / Usta</label>
+        <div class="hk-ifs-alan" style="grid-column:span 2;position:relative;"><label>Tedarikçi / Usta</label>
           <input type="text" id="hkUstaInput" placeholder="Ara veya tıklayıp listeyi görün…" value="${escapeHtml(getUstaObj(state.newHkUstaId) ? getUstaObj(state.newHkUstaId).ad : state.hkUstaArama)}"
             onfocus="onHkUstaFocus()" oninput="refreshHkUstaSonuclari(this.value)">
-          <div id="hkUstaSonuclari">
-          ${state.hkUstaAramaAcik ? '<div class="mg-list" style="margin-top:6px;max-height:320px;overflow:auto;">'+ustaAramaListesi(state.hkUstaArama, 'selectHkUstaArama')+'</div>' : ''}
+          <div id="hkUstaSonuclari" style="position:relative;z-index:5;">
+          ${state.hkUstaAramaAcik ? '<div class="mg-list" style="margin-top:6px;max-height:320px;overflow:auto;position:absolute;background:var(--surface);box-shadow:var(--shadow);border-radius:8px;width:100%;">'+ustaAramaListesi(state.hkUstaArama, 'selectHkUstaArama')+'</div>' : ''}
           </div>
         </div>
-      </div>
-      ${state.newHkUstaId ? `
-      <div class="row2" style="margin-bottom:8px;">
-        <div class="field"><label>Ana Sözleşme</label>
+        ${state.newHkUstaId ? `
+        <div class="hk-ifs-alan" style="grid-column:span 2;"><label>Ana Sözleşme</label>
           <select onchange="onHkSozlesmeSecildi(this.value)">
             <option value="">— Seçiniz —</option>
             ${anaSozlesmeleriOf(state.newHkUstaId).map(a=>`<option value="${a.sozlesmeNo}" ${state.newHkSozlesmeNo===a.sozlesmeNo?'selected':''}>${a.sozlesmeNo}</option>`).join('')}
           </select>
           ${anaSozlesmeleriOf(state.newHkUstaId).length===0 ? `<div class="disabled-hint">Bu tedarikçinin Ana Sözleşmesi yok. Önce Satınalma/Keşif'te bir Teyit'i Sözleşmeye dönüştürün.</div>` : ''}
-        </div>
-        <div></div>
-      </div>` : ''}
-      <div class="row2" style="margin-bottom:8px;">
-        <div class="field"><label>Şirket</label>
+        </div>` : ''}
+        <div class="hk-ifs-alan"><label>Şirket</label>
           <select onchange="onFieldRender('newHkSirketKodu', this.value)"><option value="">— Seçiniz —</option>${sirketOpts}</select>
         </div>
-        <div class="field"><label>Döviz / Kur</label>
-          <div class="readonly-pair">
-            <select onchange="onFieldRender('newHkDoviz', this.value)" style="max-width:70px;">
+        <div class="hk-ifs-alan"><label>Döviz / Kur</label>
+          <div style="display:flex;gap:4px;">
+            <select onchange="onFieldRender('newHkDoviz', this.value)" style="max-width:62px;">
               <option ${state.newHkDoviz==='TL'?'selected':''}>TL</option>
               <option ${state.newHkDoviz==='USD'?'selected':''}>USD</option>
               <option ${state.newHkDoviz==='EUR'?'selected':''}>EUR</option>
@@ -5287,57 +5282,40 @@ function renderHakedisSecEkrani(){
             <input type="number" step="0.0001" placeholder="Kur" value="${escapeHtml(state.newHkKur)}" oninput="onField('newHkKur', this.value)">
           </div>
         </div>
-      </div>
-      <div class="row2" style="margin-bottom:8px;">
-        <div class="field"><label>Hakediş Türü</label>
+        <div class="hk-ifs-alan"><label>Hakediş Türü</label>
           <select onchange="onFieldRender('newHkTuru', this.value)"><option value="">— Seçiniz —</option>${turOpts}</select>
         </div>
-        <div class="field"><label>Yapılan İş Türü</label>
+        <div class="hk-ifs-alan"><label>Yapılan İş Türü</label>
           <select onchange="onFieldRender('newHkIsTuru', this.value)"><option value="">— Seçiniz —</option>${isTuruOpts}</select>
         </div>
+        <div class="hk-ifs-alan"><label>Başlangıç Tarihi</label><input type="date" id="hkBaslangicInput" value="${state.newHkBaslangic}" oninput="onField('newHkBaslangic', this.value)"></div>
+        <div class="hk-ifs-alan"><label>Bitiş Tarihi</label><input type="date" value="${state.newHkBitis}" oninput="onHkBitisChange(this.value)"></div>
+        <div class="hk-ifs-alan"><label>Dönem <small style="text-transform:none;">(otomatik)</small></label><input type="text" id="hkDonemDisplay" disabled value="${escapeHtml(state.newHkDonem) || '—'}"></div>
+        <div class="hk-ifs-alan"><label>Satınalma Sipariş No</label><input type="text" value="${escapeHtml(state.newHkSatinalmaSipNo)}" oninput="onField('newHkSatinalmaSipNo', this.value)"></div>
+        <div class="hk-ifs-alan"><label>Sözleşme Tarihi</label><input type="date" value="${state.newHkSozlesmeTarihi}" oninput="onField('newHkSozlesmeTarihi', this.value)"></div>
+        <div class="hk-ifs-alan"><label>Yer Teslim Tarihi</label><input type="date" value="${state.newHkYerTeslim}" oninput="onHkYerTeslimChange(this.value)"></div>
+        <div class="hk-ifs-alan"><label>Taahhüt Bitim Tarihi</label><input type="date" value="${state.newHkTahahutBitim}" oninput="onField('newHkTahahutBitim', this.value)"></div>
+        <div class="hk-ifs-alan"><label>İnşaat Teslim Tutanak Tarihi</label><input type="date" value="${state.newHkInsaatTeslim}" oninput="onField('newHkInsaatTeslim', this.value)"></div>
+        <div class="hk-ifs-alan"><label>Stopaj %</label><input type="number" step="0.1" value="${state.newHkStopajYuzde}" oninput="onField('newHkStopajYuzde', this.value)"></div>
+        <div class="hk-ifs-alan"><label>Teminat Kesinti Oranı</label>
+          <select onchange="onFieldRender('newHkTeminatKesintiYuzde', this.value)">
+            ${[0,3,5,10,12,15].map(v=>`<option value="${v}" ${String(state.newHkTeminatKesintiYuzde)===String(v)?'selected':''}>%${v}</option>`).join('')}
+          </select>
+        </div>
+        <div class="hk-ifs-alan"><label>KDV Oranı</label>
+          <select onchange="onFieldRender('newHkKdvOrani', this.value)">
+            ${[0,10,20].map(v=>`<option value="${v}" ${String(state.newHkKdvOrani)===String(v)?'selected':''}>%${v}</option>`).join('')}
+          </select>
+        </div>
+        <div class="hk-ifs-alan"><label>Tevkifat Var Mı?</label>
+          <label style="display:flex;align-items:center;gap:6px;padding-top:6px;"><input type="checkbox" ${state.newHkTevkifatVarMi?'checked':''} onchange="onTevkifatVarMiChange(this.checked)"> Evet</label>
+        </div>
+        <div class="hk-ifs-alan"><label>Tevkifat Oranı</label>
+          <input type="number" step="0.1" placeholder="${state.newHkTevkifatVarMi?'Lütfen giriniz':''}" value="${state.newHkTevkifatVarMi ? escapeHtml(state.newHkTevkifatOrani) : '0'}" ${state.newHkTevkifatVarMi?'':'disabled'} oninput="onField('newHkTevkifatOrani', this.value)">
+        </div>
+        <div class="hk-ifs-alan" style="grid-column:span 2;"><label>Değerlendirme Notu</label><textarea oninput="onField('newHkDegerlendirmeNotu', this.value)" style="min-height:38px;">${escapeHtml(state.newHkDegerlendirmeNotu)}</textarea></div>
       </div>
-      <div class="row2" style="margin-bottom:8px;">
-        <div class="field"><label>Başlangıç Tarihi</label><input type="date" id="hkBaslangicInput" value="${state.newHkBaslangic}" oninput="onField('newHkBaslangic', this.value)"></div>
-        <div class="field"><label>Bitiş Tarihi</label><input type="date" value="${state.newHkBitis}" oninput="onHkBitisChange(this.value)"></div>
-      </div>
-      <div class="row2" style="margin-bottom:8px;">
-        <div class="field"><label>Dönem <small style="color:var(--muted);">(Bitiş Tarihi'nden otomatik)</small></label><input type="text" id="hkDonemDisplay" disabled value="${escapeHtml(state.newHkDonem) || '—'}"></div>
-        <div class="field"><label>Satınalma Sipariş No</label><input type="text" value="${escapeHtml(state.newHkSatinalmaSipNo)}" oninput="onField('newHkSatinalmaSipNo', this.value)"></div>
-      </div>
-      <details ${state.hkDigerAcik?'open':''} ontoggle="state.hkDigerAcik=this.open">
-        <summary style="cursor:pointer;color:var(--primary);font-size:12.5px;font-weight:600;margin:6px 0;">▸ Diğer bilgiler (Sözleşme Tarihleri, Oranlar)</summary>
-        <div class="row2" style="margin:10px 0 8px;">
-          <div class="field"><label>Sözleşme Tarihi</label><input type="date" value="${state.newHkSozlesmeTarihi}" oninput="onField('newHkSozlesmeTarihi', this.value)"></div>
-          <div class="field"><label>Yer Teslim Tarihi</label><input type="date" value="${state.newHkYerTeslim}" oninput="onHkYerTeslimChange(this.value)"></div>
-        </div>
-        <div class="row2" style="margin-bottom:8px;">
-          <div class="field"><label>Taahhüt Bitim Tarihi</label><input type="date" value="${state.newHkTahahutBitim}" oninput="onField('newHkTahahutBitim', this.value)"></div>
-          <div class="field"><label>İnşaat Teslim Tutanak Tarihi</label><input type="date" value="${state.newHkInsaatTeslim}" oninput="onField('newHkInsaatTeslim', this.value)"></div>
-        </div>
-        <div class="row2" style="margin-bottom:8px;">
-          <div class="field"><label>Stopaj %</label><input type="number" step="0.1" value="${state.newHkStopajYuzde}" oninput="onField('newHkStopajYuzde', this.value)"></div>
-          <div class="field"><label>Teminat Kesinti Oranı</label>
-            <select onchange="onFieldRender('newHkTeminatKesintiYuzde', this.value)">
-              ${[0,3,5,10,12,15].map(v=>`<option value="${v}" ${String(state.newHkTeminatKesintiYuzde)===String(v)?'selected':''}>%${v}</option>`).join('')}
-            </select>
-          </div>
-        </div>
-        <div class="row2" style="margin-bottom:8px;">
-          <div class="field"><label>KDV Oranı</label>
-            <select onchange="onFieldRender('newHkKdvOrani', this.value)">
-              ${[0,10,20].map(v=>`<option value="${v}" ${String(state.newHkKdvOrani)===String(v)?'selected':''}>%${v}</option>`).join('')}
-            </select>
-          </div>
-          <div class="field"><label>Tevkifat Oranı (kesir, örn. 0.4)</label>
-            <input type="number" step="0.1" placeholder="${state.newHkTevkifatVarMi?'Lütfen giriniz':''}" value="${state.newHkTevkifatVarMi ? escapeHtml(state.newHkTevkifatOrani) : '0'}" ${state.newHkTevkifatVarMi?'':'disabled'} oninput="onField('newHkTevkifatOrani', this.value)">
-          </div>
-        </div>
-        <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:8px;">
-          <input type="checkbox" ${state.newHkTevkifatVarMi?'checked':''} onchange="onTevkifatVarMiChange(this.checked)"> Tevkifat Kesintisi Var Mı?
-        </label>
-        <div class="field" style="margin-bottom:8px;"><label>Değerlendirme Notu</label><textarea oninput="onField('newHkDegerlendirmeNotu', this.value)">${escapeHtml(state.newHkDegerlendirmeNotu)}</textarea></div>
-      </details>
-      <div class="actions" style="margin-top:12px;">
+      <div class="actions" style="margin-top:14px;">
         <button class="btn btn-publish" onclick="startNewHakedis()">⬆ Yeni Hakediş Başlat</button>
         <span class="req-note">Sözleşme Bedeli, seçilen tedarikçinin Teyit Formlarından otomatik toplanır.</span>
       </div>
