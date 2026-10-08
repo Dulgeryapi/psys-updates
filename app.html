@@ -4719,28 +4719,13 @@ function renderManageTab(){
     <div class="mg-row"><span class="mg-code">${a.kod}</span><span class="mg-ad">${escapeHtml(a.tanim)}</span><button class="icon-btn del-btn" onclick="deleteAktivite('${a.id}')" title="Sil">✕</button></div>`).join('') : '<div class="mg-empty">Henüz aktivite yok.</div>';
 
   return `
-    <div class="card" style="margin-bottom:16px;">
-      <h2><span class="num">⇅</span>Yedekleme / Senkronizasyon <small>3 kişi ayrı kopya kullanıyorsa</small></h2>
-      <div class="disabled-hint" style="margin-bottom:10px;">Bu dosyayı üçünüz de aynı paylaşılan bağlantıdan açarsanız veriler otomatik senkronize olur. Ayrı kopyalar kullanıyorsanız, gün sonunda "Dışa Aktar"a basıp dosyayı diğerlerine gönderin; onlar "İçe Aktar" ile senkronize etsin.</div>
-      <div class="actions" style="margin-top:0;">
-        <button class="btn btn-ghost btn-sm" onclick="exportAllData()">⬇ Tüm Veriyi Dışa Aktar</button>
-        <button class="btn btn-ghost btn-sm" onclick="triggerImport()">⬆ Yedekten İçe Aktar</button>
-        <input type="file" id="importFileInput" accept="application/json" style="display:none;" onchange="importAllData(this)">
-      </div>
+    <div style="display:flex;align-items:center;gap:10px;margin:0 0 12px;">
+      <span style="font-size:20px;">📐</span>
+      <div style="font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--primary);">Poz Taksonomisi</div>
     </div>
+    <div style="height:1px;background:var(--border);margin-bottom:16px;"></div>
 
-    <div class="card" style="margin-bottom:16px;">
-      <h2><span class="num">📁</span>Ortak Klasör (Yandex Disk vb.) <small>3 kişi aynı veriyi gerçek zamanlı paylaşsın</small></h2>
-      <div class="disabled-hint" style="margin-bottom:10px;">Yandex Disk'te senkronize olan ortak bir klasör seçin. Tüm bilgisayarlarda AYNI klasörü seçmeniz gerekir — bu bilgisayardaki Yandex Disk klasör yolu farklı görünse de, hepsi aynı buluta senkronize olduğu için veri ortak hale gelir. Kaydettikten sonra uygulama yeniden başlar.</div>
-      <div id="veriKonumuBilgi" style="font-size:12px;color:var(--muted);margin-bottom:8px;">Yükleniyor…</div>
-      <div class="actions" style="margin-top:0;">
-        <button class="btn btn-ghost btn-sm" onclick="veriKonumuKlasorSec()">📁 Klasör Seç</button>
-        <button class="btn btn-ghost btn-sm" onclick="veriKonumuVarsayilanaDon()">↺ Varsayılana Dön (bu bilgisayara özel)</button>
-      </div>
-    </div>
-
-    <div class="grid">
-      <div class="card">
+    <div class="card">
         <h2><span class="num">A</span>Ana Grup Yönetimi</h2>
         <div class="mg-list">${anaRows}</div>
         <div class="row-add">
@@ -4750,94 +4735,7 @@ function renderManageTab(){
         </div>
       </div>
 
-      <div class="card">
-        <h2><span class="num">Ş</span>Şantiye Kodu Yönetimi</h2>
-        <div class="mg-list">${santRows}</div>
-        <div class="row-add" style="grid-template-columns:1fr auto;">
-          <input class="code-input" maxlength="4" type="text" placeholder="Şantiye kodu (örn. GN)" value="${escapeHtml(state.newSantiye)}" oninput="onField('newSantiye', this.value)">
-          <button class="btn-add" onclick="addSantiye()">+ Ekle</button>
-        </div>
-      </div>
-
-      <div class="card">
-        <h2><span class="num">📄</span>İş Sözleşmesi Şablonu <small style="color:var(--muted);font-weight:400;">Personel modülünde kullanılır</small></h2>
-        <div class="disabled-hint" style="margin-bottom:10px;">Şu an kullanılan: ${state.issozSablonAd ? `<b>${escapeHtml(state.issozSablonAd)}</b> (özel yüklenen)` : '<b>Varsayılan şablon</b>'}. Metni değiştirmek isterseniz, Word'de yer tutucuları (§§ADI_SOYADI§§ gibi) aynı yerde bırakarak revize edin ve buradan yükleyin.</div>
-        <div class="actions" style="margin-top:0;">
-          <label class="btn btn-ghost" style="cursor:pointer;">📤 Yeni Şablon Yükle (.docx)<input type="file" accept=".docx" style="display:none;" onchange="issozSablonYukle(this)"></label>
-          ${state.issozSablonAd ? `<button class="btn btn-ghost btn-sm" onclick="issozSablonSifirla()">Varsayılana Dön</button>` : ''}
-        </div>
-      </div>
-
-      <div class="card">
-        <h2><span class="num">📄</span>Malzeme Temin Sözleşmesi Şablonu <small style="color:var(--muted);font-weight:400;">Malzeme (Envanter) modülünde kullanılır</small></h2>
-        <div class="disabled-hint" style="margin-bottom:10px;">Şu an kullanılan: ${state.mlzsozSablonAd ? `<b>${escapeHtml(state.mlzsozSablonAd)}</b> (özel yüklenen)` : '<b>Varsayılan şablon</b>'}. Metni değiştirmek isterseniz, Word\'de yer tutucuları (§§TEDARIKCI_ADI§§ gibi) aynı yerde bırakarak revize edin ve buradan yükleyin.</div>
-        <div class="actions" style="margin-top:0;">
-          <label class="btn btn-ghost" style="cursor:pointer;">📤 Yeni Şablon Yükle (.docx)<input type="file" accept=".docx" style="display:none;" onchange="mlzsozSablonYukle(this)"></label>
-          ${state.mlzsozSablonAd ? `<button class="btn btn-ghost btn-sm" onclick="mlzsozSablonSifirla()">Varsayılana Dön</button>` : ''}
-        </div>
-      </div>
-
-      <div class="card">
-        <h2><span class="num">D</span>Departman Yönetimi <small style="color:var(--muted);font-weight:400;">Personel modülünde kullanılır</small></h2>
-        <div class="mg-list">${state.departmanlar.length ? state.departmanlar.map(d=>`
-          <div class="mg-row">
-            ${state.editDepartmanId===d.id ? `
-            <input type="text" value="${escapeHtml(state.editDepartmanDraft)}" oninput="onField('editDepartmanDraft', this.value)" style="flex:1;">
-            <button class="icon-btn" onclick="saveEditDepartman('${d.id}')" title="Kaydet">✓</button>
-            <button class="icon-btn" onclick="state.editDepartmanId=null; render();" title="Vazgeç">✕</button>` : `
-            <span class="mg-code">${escapeHtml(d.kod||'—')}</span>
-            <span class="mg-ad">${escapeHtml(d.ad)}</span>
-            <select style="max-width:180px;font-size:12px;" onchange="onDepartmanBolumYoneticisi('${d.id}', this.value)" title="Bölüm Yöneticisi — izin onayının son adımı">
-              <option value="">Bölüm Yöneticisi yok</option>
-              ${state.personeller.map(p=>`<option value="${p.id}" ${d.bolumYoneticisiId===p.id?'selected':''}>${escapeHtml(p.ad)}</option>`).join('')}
-            </select>
-            <button class="icon-btn" onclick="startEditDepartman('${d.id}', '${escapeHtml(d.ad).replace(/'/g,"&#39;")}')" title="Düzenle">✎</button>
-            <button class="icon-btn del-btn" onclick="deleteDepartman('${d.id}')" title="Sil">✕</button>`}
-          </div>`).join('') : '<div class="mg-empty">Henüz departman yok.</div>'}</div>
-        <div class="row-add" style="grid-template-columns:1fr auto;">
-          <input type="text" placeholder="Departman adı (örn. Muhasebe)" value="${escapeHtml(state.newDepartmanAd)}" oninput="onField('newDepartmanAd', this.value)">
-          <button class="btn-add" onclick="addDepartman()">+ Ekle</button>
-        </div>
-        <div class="field" style="margin-top:14px;max-width:400px;"><label>Muhasebe Bildirim E-postası <small style="color:var(--muted);">(izin son onaylanınca mail buraya hazırlanır)</small></label>
-          <input type="email" value="${escapeHtml(state.muhasebeEmail)}" oninput="onMuhasebeEmail(this.value)" placeholder="ornek@dulgeryapi.com"></div>
-      </div>
-
-      <div class="card">
-        <h2><span class="num">📧</span>Mail Ayarları <small style="color:var(--muted);font-weight:400;">Bu bilgisayara özel — Yandex'e hiç senkron olmaz</small></h2>
-        <div class="disabled-hint" style="margin-bottom:10px;">
-          ${!hasMailAyarlari ? 'Bu özellik sadece kurulu masaüstü uygulamasında çalışır (tarayıcıda değil).' :
-            state.mailAyarlariYerel.ayarliMi ? `Durum: <b style="color:var(--accent-dark);">Ayarlandı</b> — ${escapeHtml(state.mailAyarlariYerel.user)} (${escapeHtml(state.mailAyarlariYerel.host)}:${state.mailAyarlariYerel.port}, ${state.mailAyarlariYerel.guvenlik==='ssl'?'SSL/TLS':state.mailAyarlariYerel.guvenlik==='starttls'?'STARTTLS':'güvenliksiz'}). Ayarlıyken izin bildirimleri otomatik gönderilir; ayarlı değilse mail programınız açılır, siz gönderirsiniz.` :
-            'Durum: <b>Ayarlanmamış</b> — izin bildirimleri şu an mail programınızı açarak (mailto) çalışıyor. Aşağıyı doldurup kaydederseniz otomatik gönderime geçer.'}
-        </div>
-        ${hasMailAyarlari ? `
-        <div class="row2" style="margin-bottom:10px;">
-          <div class="field"><label>SMTP Sunucu</label><input type="text" value="${escapeHtml(state.mailAyarlariForm.host)}" oninput="onMailAyarlariForm('host', this.value)" placeholder="örn. mail.dulgeryapi.com.tr"></div>
-          <div class="field"><label>Port</label><input type="text" inputmode="numeric" value="${escapeHtml(state.mailAyarlariForm.port)}" oninput="onMailAyarlariForm('port', this.value)" placeholder="465"></div>
-          <div class="field"><label>Bağlantı Güvenliği</label>
-            <select onchange="onMailAyarlariGuvenlik(this.value)">
-              <option value="ssl" ${state.mailAyarlariForm.guvenlik==='ssl'?'selected':''}>SSL/TLS (genelde port 465)</option>
-              <option value="starttls" ${state.mailAyarlariForm.guvenlik==='starttls'?'selected':''}>STARTTLS (genelde port 587)</option>
-              <option value="yok" ${state.mailAyarlariForm.guvenlik==='yok'?'selected':''}>Yok (şifresiz)</option>
-            </select>
-          </div>
-        </div>
-        <div class="row2" style="margin-bottom:10px;">
-          <div class="field"><label>Kullanıcı Adı (e-posta)</label><input type="email" value="${escapeHtml(state.mailAyarlariForm.user)}" oninput="onMailAyarlariForm('user', this.value)" placeholder="yazilim@dulgeryapi.com.tr"></div>
-          <div class="field"><label>Şifre</label>
-            <div style="display:flex;gap:6px;">
-              <input type="${state.mailAyarlariSifreGoster?'text':'password'}" value="${escapeHtml(state.mailAyarlariForm.pass)}" oninput="onMailAyarlariForm('pass', this.value)" placeholder="${state.mailAyarlariYerel.ayarliMi?'(değiştirmek için yeniden girin)':''}" style="flex:1;">
-              <button type="button" class="icon-btn" onclick="state.mailAyarlariSifreGoster=!state.mailAyarlariSifreGoster; render();" title="Şifreyi göster/gizle">${state.mailAyarlariSifreGoster?'🙈':'👁'}</button>
-            </div>
-          </div>
-        </div>
-        <div class="actions" style="margin-top:0;">
-          <button class="btn btn-publish" onclick="mailAyarlariKaydet()">Kaydet</button>
-          <button class="btn btn-ghost" onclick="mailAyarlariTestGonder()">✉ Test Maili Gönder</button>
-          ${state.mailAyarlariYerel.ayarliMi ? `<button class="btn btn-ghost btn-sm" onclick="mailAyarlariSifirla()">Ayarları Sil</button>` : ''}
-        </div>` : ''}
-      </div>
-
-      <div class="card">
+    <div class="card">
         <h2><span class="num">B</span>Alt Grup Yönetimi</h2>
         <div class="mg-context">
           <select onchange="onMgAnaChange(this.value)">
@@ -4853,7 +4751,41 @@ function renderManageTab(){
         </div>
       </div>
 
-      <div class="card">
+    <div class="card">
+        <h2><span class="num">C</span>Tali Grup Yönetimi</h2>
+        <div class="mg-context">
+          <select disabled style="flex:0 0 90px;background:#f6f4f8;color:var(--muted);">
+            <option>${state.mgAna || '—'}</option>
+          </select>
+          <select onchange="onMgAltChange(this.value)" ${!state.mgAna?'disabled':''}>
+            <option value="">— Alt grup seçin —</option>
+            ${altOpts}
+          </select>
+        </div>
+        <div class="mg-list">${taliRows}</div>
+        <div class="row-add">
+          <input class="code-input" maxlength="4" type="text" placeholder="Kod" value="${escapeHtml(state.newTaliKodu)}" oninput="onField('newTaliKodu', this.value)" ${!state.mgAlt?'disabled':''}>
+          <input type="text" placeholder="Tali grup adı" value="${escapeHtml(state.newTaliAd)}" oninput="onField('newTaliAd', this.value)" ${!state.mgAlt?'disabled':''}>
+          <button class="btn-add" onclick="addTali()" ${!state.mgAlt?'disabled':''}>+ Ekle</button>
+        </div>
+      </div>
+
+    <div class="card">
+        <h2><span class="num">Ş</span>Şantiye Kodu Yönetimi</h2>
+        <div class="mg-list">${santRows}</div>
+        <div class="row-add" style="grid-template-columns:1fr auto;">
+          <input class="code-input" maxlength="4" type="text" placeholder="Şantiye kodu (örn. GN)" value="${escapeHtml(state.newSantiye)}" oninput="onField('newSantiye', this.value)">
+          <button class="btn-add" onclick="addSantiye()">+ Ekle</button>
+        </div>
+      </div>
+
+    <div style="display:flex;align-items:center;gap:10px;margin:26px 0 12px;">
+      <span style="font-size:20px;">🏢</span>
+      <div style="font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--primary);">Proje / Şirket / Tedarikçi</div>
+    </div>
+    <div style="height:1px;background:var(--border);margin-bottom:16px;"></div>
+
+    <div class="card">
         <h2><span class="num">P</span>Proje Yönetimi <small>Kod, şirkete göre otomatik oluşur</small></h2>
         <div class="mg-list">${projeRows}</div>
         <div class="row-add" style="grid-template-columns:1fr 1.4fr auto;">
@@ -4867,22 +4799,7 @@ function renderManageTab(){
         ${state.newProjeSirketKodu ? `<div style="font-size:11px;color:var(--muted);margin-top:6px;">Otomatik kod: <b>${nextProjeKodu(state.newProjeSirketKodu)}</b></div>` : ''}
       </div>
 
-      <div class="card">
-        <h2><span class="num">U</span>Usta / Taşeron Yönetimi <small>Tedarikçi Kodu otomatik (T0001…)</small></h2>
-        <div class="mg-list">${ustaRows}</div>
-        <div class="row2" style="margin-bottom:8px;grid-template-columns:1.3fr 1fr 1fr;">
-          <input type="text" placeholder="Usta / Taşeron / Firma adı" value="${escapeHtml(state.newUstaAd)}" oninput="onField('newUstaAd', this.value)">
-          <input type="text" placeholder="Yetkili" value="${escapeHtml(state.newUstaYetkili)}" oninput="onField('newUstaYetkili', this.value)">
-          <input type="text" placeholder="Telefon" value="${escapeHtml(state.newUstaTelefon)}" oninput="onField('newUstaTelefon', this.value)">
-        </div>
-        <div class="row-add" style="grid-template-columns:1fr auto;">
-          <input type="text" placeholder="E-Posta" value="${escapeHtml(state.newUstaEposta)}" oninput="onField('newUstaEposta', this.value)">
-          <button class="btn-add" onclick="addUsta()">+ Ekle</button>
-        </div>
-        <input type="text" placeholder="Adres" value="${escapeHtml(state.newUstaAdres)}" oninput="onField('newUstaAdres', this.value)" style="margin-top:8px;">
-      </div>
-
-      <div class="card">
+    <div class="card">
         <h2><span class="num">Ş</span>Şirket Yönetimi</h2>
         <div class="mg-list">${sirketRows}</div>
         <div class="row2" style="margin-bottom:8px;">
@@ -4899,87 +4816,28 @@ function renderManageTab(){
         </div>
       </div>
 
-      <div class="card">
-        <h2><span class="num">İ</span>İhzarat Tanımlama</h2>
-        <div class="mg-list">${ihzaratTanimRows}</div>
-        <div class="row2" style="margin-bottom:8px;">
-          <select onchange="onFieldRender('newIhzUstaId', this.value)">
-            <option value="">— Tedarikçi seçin —</option>
-            ${state.ustalar.map(u=>`<option value="${u.id}" ${state.newIhzUstaId===u.id?'selected':''}>${escapeHtml(u.ad)}</option>`).join('')}
-          </select>
-          <select onchange="onFieldRender('newIhzProjeKodu', this.value)">
-            <option value="">— Proje seçin —</option>
-            ${state.projeler.map(p=>`<option value="${p.kodu}" ${state.newIhzProjeKodu===p.kodu?'selected':''}>${p.kodu} — ${escapeHtml(p.ad)}</option>`).join('')}
-          </select>
-        </div>
-        <div class="row2" style="margin-bottom:8px;">
-          <select onchange="onFieldRender('newIhzSozlesmeNo', this.value)">
-            <option value="">— Ana Sözleşme seçin (opsiyonel) —</option>
-            ${anaSozlesmeleriOf(state.newIhzUstaId).map(a=>`<option value="${a.sozlesmeNo}" ${state.newIhzSozlesmeNo===a.sozlesmeNo?'selected':''}>${a.sozlesmeNo}</option>`).join('')}
-          </select>
-        </div>
-        <div class="row2" style="margin-bottom:8px;">
-          <select onchange="onFieldRender('newIhzIsTuru', this.value)">
-            <option value="">— Yapılan İş Türü —</option>
-            ${state.yapilanIsTurleri.map(t=>`<option value="${t}" ${state.newIhzIsTuru===t?'selected':''}>${t}</option>`).join('')}
-          </select>
-          <input type="text" inputmode="decimal" placeholder="Verilen Tutar (TL)" value="${paraInputValue('newIhzTutar')}" oninput="paraInputOnInput(this)" onblur="paraInputOnBlur(this,'newIhzTutar')">
+    <div class="card">
+        <h2><span class="num">U</span>Usta / Taşeron Yönetimi <small>Tedarikçi Kodu otomatik (T0001…)</small></h2>
+        <div class="mg-list">${ustaRows}</div>
+        <div class="row2" style="margin-bottom:8px;grid-template-columns:1.3fr 1fr 1fr;">
+          <input type="text" placeholder="Usta / Taşeron / Firma adı" value="${escapeHtml(state.newUstaAd)}" oninput="onField('newUstaAd', this.value)">
+          <input type="text" placeholder="Yetkili" value="${escapeHtml(state.newUstaYetkili)}" oninput="onField('newUstaYetkili', this.value)">
+          <input type="text" placeholder="Telefon" value="${escapeHtml(state.newUstaTelefon)}" oninput="onField('newUstaTelefon', this.value)">
         </div>
         <div class="row-add" style="grid-template-columns:1fr auto;">
-          <input type="text" placeholder="Açıklama (örn. Ödenen malzeme avansı)" value="${escapeHtml(state.newIhzAciklama)}" oninput="onField('newIhzAciklama', this.value)">
-          <button class="btn-add" onclick="addIhzaratTanim()">+ Ekle</button>
+          <input type="text" placeholder="E-Posta" value="${escapeHtml(state.newUstaEposta)}" oninput="onField('newUstaEposta', this.value)">
+          <button class="btn-add" onclick="addUsta()">+ Ekle</button>
         </div>
+        <input type="text" placeholder="Adres" value="${escapeHtml(state.newUstaAdres)}" oninput="onField('newUstaAdres', this.value)" style="margin-top:8px;">
       </div>
 
-      <div class="card">
-        <h2><span class="num">🏠</span>Barter Tanımlama</h2>
-        <div class="mg-list">${barterTanimRows}</div>
-        <div class="row2" style="margin-bottom:8px;">
-          <select onchange="onFieldRender('newBarterUstaId', this.value)">
-            <option value="">— Tedarikçi seçin —</option>
-            ${state.ustalar.map(u=>`<option value="${u.id}" ${state.newBarterUstaId===u.id?'selected':''}>${escapeHtml(u.ad)}</option>`).join('')}
-          </select>
-          <select onchange="onFieldRender('newBarterProjeKodu', this.value)">
-            <option value="">— Proje seçin —</option>
-            ${state.projeler.map(p=>`<option value="${p.kodu}" ${state.newBarterProjeKodu===p.kodu?'selected':''}>${p.kodu} — ${escapeHtml(p.ad)}</option>`).join('')}
-          </select>
-        </div>
-        <select onchange="onFieldRender('newBarterSozlesmeNo', this.value)" style="margin-bottom:8px;">
-          <option value="">— Ana Sözleşme seçin (opsiyonel) —</option>
-          ${anaSozlesmeleriOf(state.newBarterUstaId).map(a=>`<option value="${a.sozlesmeNo}" ${state.newBarterSozlesmeNo===a.sozlesmeNo?'selected':''}>${a.sozlesmeNo}</option>`).join('')}
-        </select>
-        <div class="row2" style="margin-bottom:8px;">
-          <input type="text" placeholder="Daire Adı" value="${escapeHtml(state.newBarterDaireAdi)}" oninput="onField('newBarterDaireAdi', this.value)">
-          <input type="text" placeholder="Kat" value="${escapeHtml(state.newBarterKat)}" oninput="onField('newBarterKat', this.value)">
-        </div>
-        <div class="row2" style="margin-bottom:8px;">
-          <input type="text" placeholder="Müşteri No" value="${escapeHtml(state.newBarterMusteriNo)}" oninput="onField('newBarterMusteriNo', this.value)">
-          <input type="text" inputmode="decimal" placeholder="Satış Tutarı (TL)" value="${paraInputValue('newBarterSatisTutari')}" oninput="paraInputOnInput(this)" onblur="paraInputOnBlur(this,'newBarterSatisTutari')">
-        </div>
-        <input type="text" placeholder="Açıklama (hangi gerekçeyle veriliyor)" value="${escapeHtml(state.newBarterAciklama)}" oninput="onField('newBarterAciklama', this.value)" style="margin-bottom:8px;">
-        <div class="row-add" style="grid-template-columns:1fr auto;">
-          <input type="text" inputmode="decimal" placeholder="Ön Tahsilat (TL) — yoksa 0 girin" value="${paraInputValue('newBarterOnTahsilat')}" oninput="paraInputOnInput(this)" onblur="paraInputOnBlur(this,'newBarterOnTahsilat')">
-          <button class="btn-add" onclick="addBarterTanim()">+ Ekle</button>
-        </div>
-      </div>
+    <div style="display:flex;align-items:center;gap:10px;margin:26px 0 12px;">
+      <span style="font-size:20px;">📊</span>
+      <div style="font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--primary);">Hakediş Tanımları</div>
+    </div>
+    <div style="height:1px;background:var(--border);margin-bottom:16px;"></div>
 
-      <div class="card">
-        <h2><span class="num">T</span>Hakediş Türü / Yapılan İş Türü</h2>
-        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Hakediş Türü</div>
-        <div class="mg-list">${hakedisTuruRows}</div>
-        <div class="row-add" style="grid-template-columns:1fr auto;margin-bottom:14px;">
-          <input type="text" placeholder="Yeni tür" value="${escapeHtml(state.newHakedisTuru)}" oninput="onField('newHakedisTuru', this.value)">
-          <button class="btn-add" onclick="addHakedisTuru()">+ Ekle</button>
-        </div>
-        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Yapılan İş Türü</div>
-        <div class="mg-list">${yapilanIsTuruRows}</div>
-        <div class="row-add" style="grid-template-columns:1fr auto;">
-          <input type="text" placeholder="Yeni tür" value="${escapeHtml(state.newYapilanIsTuru)}" oninput="onField('newYapilanIsTuru', this.value)">
-          <button class="btn-add" onclick="addYapilanIsTuru()">+ Ekle</button>
-        </div>
-      </div>
-
-      <div class="card">
+    <div class="card">
         <h2><span class="num">M</span>MM03 Yönetimi <small>${state.mm03List.length} kayıt — kurumsal maliyet sınıflandırma referansı</small></h2>
         <div class="field" style="margin-bottom:8px;">
           <label>Ara <small style="color:var(--muted);">(kod veya tanım ile, ya da tıklayıp tüm listeyi görün)</small></label>
@@ -5022,25 +4880,201 @@ function renderManageTab(){
         <div class="actions" style="margin-top:0;"><button class="btn btn-publish" onclick="addMm03()">+ MM03 Ekle</button></div>
       </div>
 
-      <div class="card">
-        <h2><span class="num">C</span>Tali Grup Yönetimi</h2>
-        <div class="mg-context">
-          <select disabled style="flex:0 0 90px;background:#f6f4f8;color:var(--muted);">
-            <option>${state.mgAna || '—'}</option>
-          </select>
-          <select onchange="onMgAltChange(this.value)" ${!state.mgAna?'disabled':''}>
-            <option value="">— Alt grup seçin —</option>
-            ${altOpts}
-          </select>
+    <div class="card">
+        <h2><span class="num">T</span>Hakediş Türü / Yapılan İş Türü</h2>
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Hakediş Türü</div>
+        <div class="mg-list">${hakedisTuruRows}</div>
+        <div class="row-add" style="grid-template-columns:1fr auto;margin-bottom:14px;">
+          <input type="text" placeholder="Yeni tür" value="${escapeHtml(state.newHakedisTuru)}" oninput="onField('newHakedisTuru', this.value)">
+          <button class="btn-add" onclick="addHakedisTuru()">+ Ekle</button>
         </div>
-        <div class="mg-list">${taliRows}</div>
-        <div class="row-add">
-          <input class="code-input" maxlength="4" type="text" placeholder="Kod" value="${escapeHtml(state.newTaliKodu)}" oninput="onField('newTaliKodu', this.value)" ${!state.mgAlt?'disabled':''}>
-          <input type="text" placeholder="Tali grup adı" value="${escapeHtml(state.newTaliAd)}" oninput="onField('newTaliAd', this.value)" ${!state.mgAlt?'disabled':''}>
-          <button class="btn-add" onclick="addTali()" ${!state.mgAlt?'disabled':''}>+ Ekle</button>
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Yapılan İş Türü</div>
+        <div class="mg-list">${yapilanIsTuruRows}</div>
+        <div class="row-add" style="grid-template-columns:1fr auto;">
+          <input type="text" placeholder="Yeni tür" value="${escapeHtml(state.newYapilanIsTuru)}" oninput="onField('newYapilanIsTuru', this.value)">
+          <button class="btn-add" onclick="addYapilanIsTuru()">+ Ekle</button>
         </div>
       </div>
+
+    <div class="card">
+        <h2><span class="num">İ</span>İhzarat Tanımlama</h2>
+        <div class="mg-list">${ihzaratTanimRows}</div>
+        <div class="row2" style="margin-bottom:8px;">
+          <select onchange="onFieldRender('newIhzUstaId', this.value)">
+            <option value="">— Tedarikçi seçin —</option>
+            ${state.ustalar.map(u=>`<option value="${u.id}" ${state.newIhzUstaId===u.id?'selected':''}>${escapeHtml(u.ad)}</option>`).join('')}
+          </select>
+          <select onchange="onFieldRender('newIhzProjeKodu', this.value)">
+            <option value="">— Proje seçin —</option>
+            ${state.projeler.map(p=>`<option value="${p.kodu}" ${state.newIhzProjeKodu===p.kodu?'selected':''}>${p.kodu} — ${escapeHtml(p.ad)}</option>`).join('')}
+          </select>
+        </div>
+        <div class="row2" style="margin-bottom:8px;">
+          <select onchange="onFieldRender('newIhzSozlesmeNo', this.value)">
+            <option value="">— Ana Sözleşme seçin (opsiyonel) —</option>
+            ${anaSozlesmeleriOf(state.newIhzUstaId).map(a=>`<option value="${a.sozlesmeNo}" ${state.newIhzSozlesmeNo===a.sozlesmeNo?'selected':''}>${a.sozlesmeNo}</option>`).join('')}
+          </select>
+        </div>
+        <div class="row2" style="margin-bottom:8px;">
+          <select onchange="onFieldRender('newIhzIsTuru', this.value)">
+            <option value="">— Yapılan İş Türü —</option>
+            ${state.yapilanIsTurleri.map(t=>`<option value="${t}" ${state.newIhzIsTuru===t?'selected':''}>${t}</option>`).join('')}
+          </select>
+          <input type="text" inputmode="decimal" placeholder="Verilen Tutar (TL)" value="${paraInputValue('newIhzTutar')}" oninput="paraInputOnInput(this)" onblur="paraInputOnBlur(this,'newIhzTutar')">
+        </div>
+        <div class="row-add" style="grid-template-columns:1fr auto;">
+          <input type="text" placeholder="Açıklama (örn. Ödenen malzeme avansı)" value="${escapeHtml(state.newIhzAciklama)}" oninput="onField('newIhzAciklama', this.value)">
+          <button class="btn-add" onclick="addIhzaratTanim()">+ Ekle</button>
+        </div>
+      </div>
+
+    <div class="card">
+        <h2><span class="num">🏠</span>Barter Tanımlama</h2>
+        <div class="mg-list">${barterTanimRows}</div>
+        <div class="row2" style="margin-bottom:8px;">
+          <select onchange="onFieldRender('newBarterUstaId', this.value)">
+            <option value="">— Tedarikçi seçin —</option>
+            ${state.ustalar.map(u=>`<option value="${u.id}" ${state.newBarterUstaId===u.id?'selected':''}>${escapeHtml(u.ad)}</option>`).join('')}
+          </select>
+          <select onchange="onFieldRender('newBarterProjeKodu', this.value)">
+            <option value="">— Proje seçin —</option>
+            ${state.projeler.map(p=>`<option value="${p.kodu}" ${state.newBarterProjeKodu===p.kodu?'selected':''}>${p.kodu} — ${escapeHtml(p.ad)}</option>`).join('')}
+          </select>
+        </div>
+        <select onchange="onFieldRender('newBarterSozlesmeNo', this.value)" style="margin-bottom:8px;">
+          <option value="">— Ana Sözleşme seçin (opsiyonel) —</option>
+          ${anaSozlesmeleriOf(state.newBarterUstaId).map(a=>`<option value="${a.sozlesmeNo}" ${state.newBarterSozlesmeNo===a.sozlesmeNo?'selected':''}>${a.sozlesmeNo}</option>`).join('')}
+        </select>
+        <div class="row2" style="margin-bottom:8px;">
+          <input type="text" placeholder="Daire Adı" value="${escapeHtml(state.newBarterDaireAdi)}" oninput="onField('newBarterDaireAdi', this.value)">
+          <input type="text" placeholder="Kat" value="${escapeHtml(state.newBarterKat)}" oninput="onField('newBarterKat', this.value)">
+        </div>
+        <div class="row2" style="margin-bottom:8px;">
+          <input type="text" placeholder="Müşteri No" value="${escapeHtml(state.newBarterMusteriNo)}" oninput="onField('newBarterMusteriNo', this.value)">
+          <input type="text" inputmode="decimal" placeholder="Satış Tutarı (TL)" value="${paraInputValue('newBarterSatisTutari')}" oninput="paraInputOnInput(this)" onblur="paraInputOnBlur(this,'newBarterSatisTutari')">
+        </div>
+        <input type="text" placeholder="Açıklama (hangi gerekçeyle veriliyor)" value="${escapeHtml(state.newBarterAciklama)}" oninput="onField('newBarterAciklama', this.value)" style="margin-bottom:8px;">
+        <div class="row-add" style="grid-template-columns:1fr auto;">
+          <input type="text" inputmode="decimal" placeholder="Ön Tahsilat (TL) — yoksa 0 girin" value="${paraInputValue('newBarterOnTahsilat')}" oninput="paraInputOnInput(this)" onblur="paraInputOnBlur(this,'newBarterOnTahsilat')">
+          <button class="btn-add" onclick="addBarterTanim()">+ Ekle</button>
+        </div>
+      </div>
+
+    <div style="display:flex;align-items:center;gap:10px;margin:26px 0 12px;">
+      <span style="font-size:20px;">🧭</span>
+      <div style="font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--primary);">İnsan Kaynakları</div>
     </div>
+    <div style="height:1px;background:var(--border);margin-bottom:16px;"></div>
+
+    <div class="card">
+        <h2><span class="num">D</span>Departman Yönetimi <small style="color:var(--muted);font-weight:400;">Personel modülünde kullanılır</small></h2>
+        <div class="mg-list">${state.departmanlar.length ? state.departmanlar.map(d=>`
+          <div class="mg-row">
+            ${state.editDepartmanId===d.id ? `
+            <input type="text" value="${escapeHtml(state.editDepartmanDraft)}" oninput="onField('editDepartmanDraft', this.value)" style="flex:1;">
+            <button class="icon-btn" onclick="saveEditDepartman('${d.id}')" title="Kaydet">✓</button>
+            <button class="icon-btn" onclick="state.editDepartmanId=null; render();" title="Vazgeç">✕</button>` : `
+            <span class="mg-code">${escapeHtml(d.kod||'—')}</span>
+            <span class="mg-ad">${escapeHtml(d.ad)}</span>
+            <select style="max-width:180px;font-size:12px;" onchange="onDepartmanBolumYoneticisi('${d.id}', this.value)" title="Bölüm Yöneticisi — izin onayının son adımı">
+              <option value="">Bölüm Yöneticisi yok</option>
+              ${state.personeller.map(p=>`<option value="${p.id}" ${d.bolumYoneticisiId===p.id?'selected':''}>${escapeHtml(p.ad)}</option>`).join('')}
+            </select>
+            <button class="icon-btn" onclick="startEditDepartman('${d.id}', '${escapeHtml(d.ad).replace(/'/g,"&#39;")}')" title="Düzenle">✎</button>
+            <button class="icon-btn del-btn" onclick="deleteDepartman('${d.id}')" title="Sil">✕</button>`}
+          </div>`).join('') : '<div class="mg-empty">Henüz departman yok.</div>'}</div>
+        <div class="row-add" style="grid-template-columns:1fr auto;">
+          <input type="text" placeholder="Departman adı (örn. Muhasebe)" value="${escapeHtml(state.newDepartmanAd)}" oninput="onField('newDepartmanAd', this.value)">
+          <button class="btn-add" onclick="addDepartman()">+ Ekle</button>
+        </div>
+        <div class="field" style="margin-top:14px;max-width:400px;"><label>Muhasebe Bildirim E-postası <small style="color:var(--muted);">(izin son onaylanınca mail buraya hazırlanır)</small></label>
+          <input type="email" value="${escapeHtml(state.muhasebeEmail)}" oninput="onMuhasebeEmail(this.value)" placeholder="ornek@dulgeryapi.com"></div>
+      </div>
+
+    <div style="display:flex;align-items:center;gap:10px;margin:26px 0 12px;">
+      <span style="font-size:20px;">📄</span>
+      <div style="font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--primary);">Belge Şablonları</div>
+    </div>
+    <div style="height:1px;background:var(--border);margin-bottom:16px;"></div>
+
+    <div class="card">
+        <h2><span class="num">📄</span>İş Sözleşmesi Şablonu <small style="color:var(--muted);font-weight:400;">Personel modülünde kullanılır</small></h2>
+        <div class="disabled-hint" style="margin-bottom:10px;">Şu an kullanılan: ${state.issozSablonAd ? `<b>${escapeHtml(state.issozSablonAd)}</b> (özel yüklenen)` : '<b>Varsayılan şablon</b>'}. Metni değiştirmek isterseniz, Word'de yer tutucuları (§§ADI_SOYADI§§ gibi) aynı yerde bırakarak revize edin ve buradan yükleyin.</div>
+        <div class="actions" style="margin-top:0;">
+          <label class="btn btn-ghost" style="cursor:pointer;">📤 Yeni Şablon Yükle (.docx)<input type="file" accept=".docx" style="display:none;" onchange="issozSablonYukle(this)"></label>
+          ${state.issozSablonAd ? `<button class="btn btn-ghost btn-sm" onclick="issozSablonSifirla()">Varsayılana Dön</button>` : ''}
+        </div>
+      </div>
+
+    <div class="card">
+        <h2><span class="num">📄</span>Malzeme Temin Sözleşmesi Şablonu <small style="color:var(--muted);font-weight:400;">Malzeme (Envanter) modülünde kullanılır</small></h2>
+        <div class="disabled-hint" style="margin-bottom:10px;">Şu an kullanılan: ${state.mlzsozSablonAd ? `<b>${escapeHtml(state.mlzsozSablonAd)}</b> (özel yüklenen)` : '<b>Varsayılan şablon</b>'}. Metni değiştirmek isterseniz, Word\'de yer tutucuları (§§TEDARIKCI_ADI§§ gibi) aynı yerde bırakarak revize edin ve buradan yükleyin.</div>
+        <div class="actions" style="margin-top:0;">
+          <label class="btn btn-ghost" style="cursor:pointer;">📤 Yeni Şablon Yükle (.docx)<input type="file" accept=".docx" style="display:none;" onchange="mlzsozSablonYukle(this)"></label>
+          ${state.mlzsozSablonAd ? `<button class="btn btn-ghost btn-sm" onclick="mlzsozSablonSifirla()">Varsayılana Dön</button>` : ''}
+        </div>
+      </div>
+
+    <div style="display:flex;align-items:center;gap:10px;margin:26px 0 12px;">
+      <span style="font-size:20px;">⚙</span>
+      <div style="font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--primary);">Sistem / Bağlantı</div>
+    </div>
+    <div style="height:1px;background:var(--border);margin-bottom:16px;"></div>
+
+    <div class="card" style="margin-bottom:16px;">
+      <h2><span class="num">📁</span>Ortak Klasör (Yandex Disk vb.) <small>3 kişi aynı veriyi gerçek zamanlı paylaşsın</small></h2>
+      <div class="disabled-hint" style="margin-bottom:10px;">Yandex Disk'te senkronize olan ortak bir klasör seçin. Tüm bilgisayarlarda AYNI klasörü seçmeniz gerekir — bu bilgisayardaki Yandex Disk klasör yolu farklı görünse de, hepsi aynı buluta senkronize olduğu için veri ortak hale gelir. Kaydettikten sonra uygulama yeniden başlar.</div>
+      <div id="veriKonumuBilgi" style="font-size:12px;color:var(--muted);margin-bottom:8px;">Yükleniyor…</div>
+      <div class="actions" style="margin-top:0;">
+        <button class="btn btn-ghost btn-sm" onclick="veriKonumuKlasorSec()">📁 Klasör Seç</button>
+        <button class="btn btn-ghost btn-sm" onclick="veriKonumuVarsayilanaDon()">↺ Varsayılana Dön (bu bilgisayara özel)</button>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px;">
+      <h2><span class="num">⇅</span>Yedekleme / Senkronizasyon <small>3 kişi ayrı kopya kullanıyorsa</small></h2>
+      <div class="disabled-hint" style="margin-bottom:10px;">Bu dosyayı üçünüz de aynı paylaşılan bağlantıdan açarsanız veriler otomatik senkronize olur. Ayrı kopyalar kullanıyorsanız, gün sonunda "Dışa Aktar"a basıp dosyayı diğerlerine gönderin; onlar "İçe Aktar" ile senkronize etsin.</div>
+      <div class="actions" style="margin-top:0;">
+        <button class="btn btn-ghost btn-sm" onclick="exportAllData()">⬇ Tüm Veriyi Dışa Aktar</button>
+        <button class="btn btn-ghost btn-sm" onclick="triggerImport()">⬆ Yedekten İçe Aktar</button>
+        <input type="file" id="importFileInput" accept="application/json" style="display:none;" onchange="importAllData(this)">
+      </div>
+    </div>
+
+    <div class="card">
+        <h2><span class="num">📧</span>Mail Ayarları <small style="color:var(--muted);font-weight:400;">Bu bilgisayara özel — Yandex'e hiç senkron olmaz</small></h2>
+        <div class="disabled-hint" style="margin-bottom:10px;">
+          ${!hasMailAyarlari ? 'Bu özellik sadece kurulu masaüstü uygulamasında çalışır (tarayıcıda değil).' :
+            state.mailAyarlariYerel.ayarliMi ? `Durum: <b style="color:var(--accent-dark);">Ayarlandı</b> — ${escapeHtml(state.mailAyarlariYerel.user)} (${escapeHtml(state.mailAyarlariYerel.host)}:${state.mailAyarlariYerel.port}, ${state.mailAyarlariYerel.guvenlik==='ssl'?'SSL/TLS':state.mailAyarlariYerel.guvenlik==='starttls'?'STARTTLS':'güvenliksiz'}). Ayarlıyken izin bildirimleri otomatik gönderilir; ayarlı değilse mail programınız açılır, siz gönderirsiniz.` :
+            'Durum: <b>Ayarlanmamış</b> — izin bildirimleri şu an mail programınızı açarak (mailto) çalışıyor. Aşağıyı doldurup kaydederseniz otomatik gönderime geçer.'}
+        </div>
+        ${hasMailAyarlari ? `
+        <div class="row2" style="margin-bottom:10px;">
+          <div class="field"><label>SMTP Sunucu</label><input type="text" value="${escapeHtml(state.mailAyarlariForm.host)}" oninput="onMailAyarlariForm('host', this.value)" placeholder="örn. mail.dulgeryapi.com.tr"></div>
+          <div class="field"><label>Port</label><input type="text" inputmode="numeric" value="${escapeHtml(state.mailAyarlariForm.port)}" oninput="onMailAyarlariForm('port', this.value)" placeholder="465"></div>
+          <div class="field"><label>Bağlantı Güvenliği</label>
+            <select onchange="onMailAyarlariGuvenlik(this.value)">
+              <option value="ssl" ${state.mailAyarlariForm.guvenlik==='ssl'?'selected':''}>SSL/TLS (genelde port 465)</option>
+              <option value="starttls" ${state.mailAyarlariForm.guvenlik==='starttls'?'selected':''}>STARTTLS (genelde port 587)</option>
+              <option value="yok" ${state.mailAyarlariForm.guvenlik==='yok'?'selected':''}>Yok (şifresiz)</option>
+            </select>
+          </div>
+        </div>
+        <div class="row2" style="margin-bottom:10px;">
+          <div class="field"><label>Kullanıcı Adı (e-posta)</label><input type="email" value="${escapeHtml(state.mailAyarlariForm.user)}" oninput="onMailAyarlariForm('user', this.value)" placeholder="yazilim@dulgeryapi.com.tr"></div>
+          <div class="field"><label>Şifre</label>
+            <div style="display:flex;gap:6px;">
+              <input type="${state.mailAyarlariSifreGoster?'text':'password'}" value="${escapeHtml(state.mailAyarlariForm.pass)}" oninput="onMailAyarlariForm('pass', this.value)" placeholder="${state.mailAyarlariYerel.ayarliMi?'(değiştirmek için yeniden girin)':''}" style="flex:1;">
+              <button type="button" class="icon-btn" onclick="state.mailAyarlariSifreGoster=!state.mailAyarlariSifreGoster; render();" title="Şifreyi göster/gizle">${state.mailAyarlariSifreGoster?'🙈':'👁'}</button>
+            </div>
+          </div>
+        </div>
+        <div class="actions" style="margin-top:0;">
+          <button class="btn btn-publish" onclick="mailAyarlariKaydet()">Kaydet</button>
+          <button class="btn btn-ghost" onclick="mailAyarlariTestGonder()">✉ Test Maili Gönder</button>
+          ${state.mailAyarlariYerel.ayarliMi ? `<button class="btn btn-ghost btn-sm" onclick="mailAyarlariSifirla()">Ayarları Sil</button>` : ''}
+        </div>` : ''}
+      </div>
   `;
 }
 
