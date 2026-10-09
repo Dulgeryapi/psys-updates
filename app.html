@@ -7437,41 +7437,9 @@ function mhRenderTalepler(){
     </tr>${detay}`;
   }).join('') : `<tr><td colspan="6"><div class="mg-empty">Henüz talep yok.</div></td></tr>`;
   return `
-    <div class="card" style="margin-bottom:16px;">
-      <h2><span class="num">1</span>Yeni Talep <small>pozsuz malzeme / hizmet</small></h2>
-      ${!yerler.length ? `<div class="disabled-hint" style="margin-bottom:10px;">Önce <b>Ayarlar → Proje Yönetimi</b>'nden bir proje ekleyin (örn. Nova).</div>` : ''}
-      <div class="row2" style="margin-bottom:10px;">
-        <div class="field"><label>Proje / Şantiye <small style="color:var(--muted);">(teslim yeri — Ayarlar → Proje Yönetimi)</small></label>
-          <select onchange="onMhF('yerId', this.value)"><option value="">— Seçin —</option>${yerOpts}</select></div>
-      </div>
-      <div class="disabled-hint" style="margin-bottom:6px;">Satır ekleyin: tür seçin, tanımı yazın (kod otomatik verilir), birim ve miktarı girin.</div>
-      <div style="display:grid;grid-template-columns:130px 1fr 130px 120px 150px auto;gap:8px;align-items:end;">
-        <div class="field" style="margin:0;"><label>Tür</label>
-          <select id="mhTurSel" onchange="mhTurDegisti(this.value)"><option ${s.tur==='Malzeme'?'selected':''}>Malzeme</option><option ${s.tur==='Hizmet'?'selected':''}>Hizmet</option></select></div>
-        <div class="field" style="margin:0;"><label>Tanım</label>
-          <input type="text" id="mhTanimInp" value="${escapeHtml(s.tanim)}" placeholder="örn. Çimento CEM II 42.5" oninput="mhTanimYazildi(this.value)" autocomplete="off"></div>
-        <div class="field" style="margin:0;"><label>Birim</label>
-          <input type="text" id="mhBirimInp" list="mhBirimListe" value="${escapeHtml(s.birim)}" placeholder="adet, m², kg…" oninput="mhBirimYazildi(this.value)"></div>
-        <div class="field" style="margin:0;"><label>Miktar</label>
-          <input type="text" id="mhMiktarInp" inputmode="decimal" value="${escapeHtml(s.miktar)}" oninput="onMhSatir('miktar', this.value)"></div>
-        ${s.tur==='Malzeme' ? `<div class="field" style="margin:0;"><label>Merkez'den karşıla</label>
-          <input type="text" id="mhKarsilaInp" inputmode="decimal" value="${escapeHtml(s.karsila)}" placeholder="0" oninput="onMhSatir('karsila', this.value)"></div>` : '<div></div>'}
-        <button class="btn btn-ghost" onclick="mhSatirEkle()">+ Satır Ekle</button>
-      </div>
-      <datalist id="mhBirimListe">${birimListe.map(b=>`<option value="${escapeHtml(b)}">`).join('')}</datalist>
-      <div id="mhOneriler"></div>
-      <div id="mhMerkezIpucu" style="font-size:12.5px;margin-top:6px;"></div>
-      ${f.satirlar.length ? `
-      <div class="table-wrap" style="box-shadow:none;border:1px solid var(--border);margin-top:12px;">
-        <table><thead><tr><th>#</th><th>Tür</th><th>Tanım</th><th>Birim</th><th style="text-align:right;">Miktar</th><th style="text-align:right;">Merkez'den</th><th style="text-align:right;">Sipariş</th><th></th></tr></thead>
-        <tbody>${taslakRows}</tbody></table>
-      </div>` : ''}
-      <div class="field" style="margin-top:12px;"><label>Not <small style="color:var(--muted);">(opsiyonel)</small></label>
-        <input type="text" value="${escapeHtml(f.notu)}" oninput="onMhF('notu', this.value)"></div>
-      <div class="actions"><button class="btn btn-publish" onclick="mhTalepOlustur()">📦 Talebi Oluştur</button></div>
-    </div>
     <div class="card">
-      <h2><span class="num">2</span>Talepler <small>${state.mh.talepler.length} kayıt</small></h2>
+      <h2><span class="num">📦</span>Talepler <small>${state.mh.talepler.length} kayıt</small></h2>
+      <div class="disabled-hint" style="margin-bottom:10px;">Talepler burada <b>oluşturulmaz</b> — Üretim tarafı, <b>Üretim → Talep → Malzeme (Poz Dışı)</b> sekmesinden talebi açar, buraya otomatik düşer. Bu ekranda sadece görüntüleyip Teklif & Sipariş aşamasına geçirirsiniz.</div>
       <div class="table-wrap" style="box-shadow:none;border:1px solid var(--border);">
         <table><thead><tr><th>Talep No</th><th>Tarih</th><th>Teslim Yeri</th><th>Satırlar</th><th>Durum</th><th></th></tr></thead>
         <tbody>${talepRows}</tbody></table>
