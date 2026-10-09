@@ -1693,7 +1693,7 @@ function addProje(){
 }
 function deleteProje(kodu){
   if(state.mh && mhYerKullanimda('P:'+kodu)){
-    alert(`"${kodu}" projesi Malzeme (Envanter) modülünde (talep, sipariş veya stok kayıtlarında) kullanıldığı için silinemez.`);
+    alert(`"${kodu}" projesi Tedarik Yönetimi modülünde (talep, sipariş veya stok kayıtlarında) kullanıldığı için silinemez.`);
     return;
   }
   const usedCount = state.talepler.filter(t=>t.projeKodu===kodu).length;
@@ -5133,7 +5133,7 @@ function renderManageTab(){
       </div>
 
     <div class="card">
-        <h2><span class="num">📄</span>Malzeme Temin Sözleşmesi Şablonu <small style="color:var(--muted);font-weight:400;">Malzeme (Envanter) modülünde kullanılır</small></h2>
+        <h2><span class="num">📄</span>Malzeme Temin Sözleşmesi Şablonu <small style="color:var(--muted);font-weight:400;">Tedarik Yönetimi modülünde kullanılır</small></h2>
         <div class="disabled-hint" style="margin-bottom:10px;">Şu an kullanılan: ${state.mlzsozSablonAd ? `<b>${escapeHtml(state.mlzsozSablonAd)}</b> (özel yüklenen)` : '<b>Varsayılan şablon</b>'}. Metni değiştirmek isterseniz, Word\'de yer tutucuları (§§TEDARIKCI_ADI§§ gibi) aynı yerde bırakarak revize edin ve buradan yükleyin.</div>
         <div class="actions" style="margin-top:0;">
           <label class="btn btn-ghost" style="cursor:pointer;">📤 Yeni Şablon Yükle (.docx)<input type="file" accept=".docx" style="display:none;" onchange="mlzsozSablonYukle(this)"></label>
@@ -5227,20 +5227,23 @@ function renderHomeTab(){
     { tab:'form', icon:'🧱', label:'Poz Oluştur', sub:'Yeni İş Kalemi Tanımla', badge:null },
     { tab:'list', icon:'📋', label:'Poz Listesi', sub:'Tüm Pozları Görüntüle', badge: state.list.length || null },
     { tab:'talep', icon:'📝', label:'Talep', sub:'Poz + Miktar Talebi Aç', badge: state.talepler.filter(t=>t.satirlar.some(s=>s.durum==='bekliyor')).length || null },
-    { tab:'satinalma', icon:'💰', label:'Satınalma / Keşif', sub:'Fiyatla, Teyit Oluştur', badge: bekleyenSayisi || null },
     { tab:'hakedis', icon:'📊', label:'Hakediş', sub:'Dönemsel İlerleme, Kapak', badge: acikHakedis || null },
     { tab:'butce', icon:'💵', label:'Bütçe', sub:'Metraj, Keşif, MM03 Özeti', badge: null },
-    { tab:'mh', icon:'📦', label:'Malzeme (Envanter)', sub:'Talep, Sipariş, Stok', badge: (state.mh && state.mh.siparisler.filter(x=>!x.iptal && x.satirlar.some(l=>l.tur==='Malzeme') && mhSiparisDurumu(x)!=='Tamamlandı').length) || null },
     { tab:'raporlar', icon:'📈', label:'Raporlar', sub:'Talep, Keşif, Sözleşme, Hakediş', badge: null },
+  ];
+  const satinalmaTiles = [
+    { tab:'satinalma', icon:'💰', label:'Satınalma / Keşif', sub:'Fiyatla, Teyit Oluştur', badge: bekleyenSayisi || null },
+    { tab:'mh', icon:'📦', label:'Tedarik Yönetimi', sub:'Talep, Teklif, Onay, Sipariş, Stok', badge: (state.mh && state.mh.siparisler.filter(x=>!x.iptal && x.satirlar.some(l=>l.tur==='Malzeme') && mhSiparisDurumu(x)!=='Tamamlandı').length) || null },
   ];
   const departmanlar = [
     { id:'uretim', ad:'Üretim', tiles: uretimTiles },
+    { id:'satinalma', ad:'Satınalma', tiles: satinalmaTiles },
     { id:'finans', ad:'Finans ve Muhasebe', tiles: null },
     { id:'ik', ad:'İnsan Kaynakları ve Personel', tiles: [
       { tab:'personel', icon:'🧑\u200d💼', label:'Personel', sub:'Kartlar, İzin Takibi', badge: state.personeller.length || null },
     ] },
   ];
-  const depIkon = { uretim:'🏗️', finans:'💵', ik:'🧭' };
+  const depIkon = { uretim:'🏗️', satinalma:'🛒', finans:'💵', ik:'🧭' };
   const secili = departmanlar.find(d=>d.id===state.homeAcikDepartman) || null;
 
   if(secili){
@@ -6804,7 +6807,7 @@ function renderButceTab(){
   `;
 }
 const KILAVUZ_ICERIK = [
-  { tip:'dept', baslik:'Üretim', icon:'🏗️', alt:'Poz, Talep, Satınalma, Hakediş, Bütçe, Malzeme (Envanter), Raporlar' },
+  { tip:'dept', baslik:'Üretim', icon:'🏗️', alt:'Poz, Talep, Hakediş, Bütçe, Raporlar' },
   { tip:'bolum', baslik:'1. Poz Oluştur', adimlar:['Anagrup, Altgrup, Taligrup ve Şantiye kodunu seçin (yoksa önce Ayarlar sekmesinden ekleyin).', 'Poz Tanımı, Birim ve Poz Türü alanlarını doldurun.', '"YAYINLA" butonuna basın — Poz No otomatik oluşur ve Poz Listesi\'ne düşer.'] },
   { tip:'bolum', baslik:'2. Poz Listesi', adimlar:['Yayınlanmış tüm pozları arayabilir, filtreleyebilir, yazdırabilir ya da Excel\'e aktarabilirsiniz.', 'Toplu poz eklemek için "Toplu İçe Aktar" ile hazır Excel şablonunu kullanabilirsiniz.'] },
   { tip:'bolum', baslik:'3. Talep', adimlar:['Bir proje seçip "Talep Başlat" ile yeni bir talep açın (Talep No otomatik üretilir).', 'Poz arayıp miktar girerek talebe satır ekleyin — aynı talebe istediğiniz kadar satır ekleyebilirsiniz.', '"Devam Et" butonu: birden fazla talep arasında geçiş yapmanızı sağlar — o talebi tekrar aktif hale getirir, kaldığınız yerden satır eklemeye devam edersiniz.', 'Bekleyen (henüz fiyatlandırılmamış) bir satırın miktarını yanlış girdiyseniz, satırın yanındaki ✎ ile düzeltebilirsiniz.', 'Talep, Satınalma / Keşif sekmesine otomatik düşer, fiyatlandırma orada yapılır.'] },
@@ -6821,7 +6824,7 @@ const KILAVUZ_ICERIK = [
   { tip:'bolum', baslik:'14. Hakediş Listesi', adimlar:['Tüm hakedişleri (proje, tedarikçi, dönem, tutar) tek tabloda görüp arayabilirsiniz.', 'Arama kutusunda % işareti joker karakter olarak çalışır (örn. "2026%" yazınca 2026\'nın tüm dönemleri gelir).', 'Muhasebeye göndermek için seçtiğiniz hakedişleri Excel\'e aktarabilirsiniz.'] },
   { tip:'dept', baslik:'Ortak', icon:'⚙', alt:'Tüm departmanların paylaştığı temel veriler — tek yerden yönetilir' },
   { tip:'bolum', baslik:'15. Ayarlar', adimlar:['Ana/Alt/Tali Grup, Şantiye, Proje, Usta/Taşeron, Şirket, İhzarat Tanımlama, Barter Tanımlama, Hakediş Türü, Yapılan İş Türü ve MM03 Yönetimi buradan tanımlanır.', 'Her kart aynı mantıkla çalışır: liste + ekleme formu + ✕ ile silme (bazılarında ✎ ile düzenleme de var).'] },
-  { tip:'bolum', baslik:'16. Malzeme (Envanter)', adimlar:['Pozsuz malzeme alımı içindir; pozlu Talep/Satınalma/Hakediş akışından bağımsızdır (Hizmet artık Talep ekranındaki ayrı "Hizmet" sekmesindedir). Stok yerleri Ayarlar → Proje Yönetimi\'ndeki projelerdir (örn. Nova); ayrıca tanımlamanız gerekmez. "Merkez Envanter" sabittir ve sanal bir depodur.', 'Talepler: tanım, birim, miktar girin; kod otomatik verilir (MLZ-0001). Aynı tanımı yazarken kayıtlı benzerler önerilir, tıklarsanız aynı kod kullanılır. Malzemede Merkez\'de stok varsa yazının altında görünür; "Merkez\'den karşıla" ile o kısım Merkez\'den, kalanı siparişle karşılanır.', 'Teklif & Sipariş: en fazla 3 firmadan KDV hariç birim fiyat girilir, kazanan seçilince sipariş oluşur ve yazdırılabilir, Teslim Alma ile stoğa girer.', 'Teslim Alma: sipariş satırına karşı gelen miktar girilir (kısmi teslimat olabilir). Malzeme, siparişte seçilen şantiyenin stoğuna girer. Fazla teslimat uyarır, engellemez.', 'Stok: şantiye ve Merkez bazında miktar, yolda ve sipariş bekleyen miktar, minimum stok durumu ve KDV hariç değer (ağırlıklı ortalama maliyet) görünür. Kullanım için "Stok Çıkışı", iş bitince artan mal için "Merkeze Devir" yapılır.', 'Merkez Sevk: Merkez\'den karşılanan mal Onay Bekliyor → Yolda → Teslim Edildi adımlarıyla hedef şantiyeye geçer. Merkez\'den çıkış onayda, hedefe giriş "Teslim Aldım" ile yapılır.'] },
+  { tip:'bolum', baslik:'16. Tedarik Yönetimi', adimlar:['Pozsuz malzeme alımı içindir; pozlu Talep/Satınalma/Hakediş akışından bağımsızdır (Hizmet artık Talep ekranındaki ayrı "Hizmet" sekmesindedir). Stok yerleri Ayarlar → Proje Yönetimi\'ndeki projelerdir (örn. Nova); ayrıca tanımlamanız gerekmez. "Merkez Envanter" sabittir ve sanal bir depodur.', 'Talepler: tanım, birim, miktar girin; kod otomatik verilir (MLZ-0001). Aynı tanımı yazarken kayıtlı benzerler önerilir, tıklarsanız aynı kod kullanılır. Malzemede Merkez\'de stok varsa yazının altında görünür; "Merkez\'den karşıla" ile o kısım Merkez\'den, kalanı siparişle karşılanır.', 'Teklif & Sipariş: en fazla 3 firmadan KDV hariç birim fiyat girilir, kazanan seçilince sipariş oluşur ve yazdırılabilir, Teslim Alma ile stoğa girer.', 'Teslim Alma: sipariş satırına karşı gelen miktar girilir (kısmi teslimat olabilir). Malzeme, siparişte seçilen şantiyenin stoğuna girer. Fazla teslimat uyarır, engellemez.', 'Stok: şantiye ve Merkez bazında miktar, yolda ve sipariş bekleyen miktar, minimum stok durumu ve KDV hariç değer (ağırlıklı ortalama maliyet) görünür. Kullanım için "Stok Çıkışı", iş bitince artan mal için "Merkeze Devir" yapılır.', 'Merkez Sevk: Merkez\'den karşılanan mal Onay Bekliyor → Yolda → Teslim Edildi adımlarıyla hedef şantiyeye geçer. Merkez\'den çıkış onayda, hedefe giriş "Teslim Aldım" ile yapılır.'] },
   { tip:'dept', baslik:'İnsan Kaynakları ve Personel', icon:'🧭', alt:'Personel kartları, izin takibi, iş sözleşmesi' },
   { tip:'bolum', baslik:'17. Personel — Kart ve Departman', adimlar:['Önce Ayarlar → Departman Yönetimi\'nden en az bir departman ekleyin (örn. Saha, Muhasebe).', 'Personel sekmesinde Ad Soyad, Unvan, Grup Şirketi, Departman, Bağlı Olduğu Yönetici (opsiyonel) ve Yıllık İzin Hakkı girip "+ Personel Ekle" ile kaydedin.', 'Tüm personel aynı anda kart olarak listelenir; sol taraftaki departman listesinden belirli bir departmanı seçip daraltabilirsiniz.', 'Bir karta tıklayınca altında detay (yönetici bağlantısı, izin özeti, izin kaydı formu) açılır; tekrar tıklayınca kapanır.'] },
   { tip:'bolum', baslik:'18. Personel — İzin Kaydı ve Onay', adimlar:['Personel kartını açıp "Yeni İzin Kaydı" bölümünden izin türünü (Yıllık/Evlilik/Babalık = ücretli, Mazeret/Doğum Sonrası = ücretsiz), tarih-saat, adres, telefon ve varsa vekalet edecek kişiyi girip "+ İzin Kaydet" deyin.', 'Personelin bağlı olduğu bir yönetici varsa talep "Beklemede" düşer ve bakiyeden düşülmez; yöneticisi yoksa otomatik "Onaylandı" olur.', 'Yönetici kendi kartını açtığında "Ekibinin Onay Bekleyen İzin Talepleri" bölümünde ekibinin taleplerini görür, tek tıkla Onaylar veya Reddeder.', 'Onaylanan bir izin bitince, kart üzerinden saat girip "🔁 Dönüşü Onayla" ile izin dönüşünü kaydedebilirsiniz.', 'Her izin kaydının yanındaki 🖨 ile resmi İzin Talep Formu\'nu (şirkete göre doğru logo ile) yazdırabilirsiniz.'] },
@@ -6960,11 +6963,12 @@ function render(){
         <button class="tab-btn ${state.tab==='form'?'active':''}" onclick="setTab('form')">Poz Oluştur</button>
         <button class="tab-btn ${state.tab==='list'?'active':''}" onclick="setTab('list')">Poz Listesi <span class="tab-badge">${state.list.length}</span></button>
         <button class="tab-btn ${state.tab==='talep'?'active':''}" onclick="setTab('talep')">Talep</button>
-        <button class="tab-btn ${state.tab==='satinalma'?'active':''}" onclick="setTab('satinalma')">Satınalma / Keşif ${bekleyenSayisi ? '<span class="tab-badge">'+bekleyenSayisi+'</span>' : ''}</button>
         <button class="tab-btn ${state.tab==='hakedis'?'active':''}" onclick="setTab('hakedis')">Hakediş</button>
         <button class="tab-btn ${state.tab==='butce'?'active':''}" onclick="setTab('butce')">💰 Bütçe</button>
-        <button class="tab-btn ${state.tab==='mh'?'active':''}" onclick="setTab('mh')">📦 Malzeme (Envanter)</button>
         <button class="tab-btn ${state.tab==='raporlar'?'active':''}" onclick="setTab('raporlar')">📊 Raporlar</button>
+        <span style="align-self:center;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);padding:0 2px 0 10px;border-right:1px solid var(--border);margin-right:4px;">🛒 Satınalma</span>
+        <button class="tab-btn ${state.tab==='satinalma'?'active':''}" onclick="setTab('satinalma')">Satınalma / Keşif ${bekleyenSayisi ? '<span class="tab-badge">'+bekleyenSayisi+'</span>' : ''}</button>
+        <button class="tab-btn ${state.tab==='mh'?'active':''}" onclick="setTab('mh')">📦 Tedarik Yönetimi</button>
         <button class="tab-btn ${state.tab==='manage'?'active':''}" onclick="setTab('manage')">⚙ Ayarlar</button>
       </div>` : ''}
     </div>
@@ -7279,7 +7283,7 @@ function renderMhTab(){
   const govdeFn = { talepler: mhRenderTalepler, teklif: mhRenderTeklif, teslim: mhRenderTeslim, stok: mhRenderStok, sevk: mhRenderSevk, hareket: mhRenderHareket, tedarikci: mhRenderTedarikci, rapor: mhRenderRapor, tanim: mhRenderTanim }[state.mhSekme] || mhRenderTalepler;
   return `
     <div class="page-head">
-      <h1>📦 Malzeme (Envanter)</h1>
+      <h1>📦 Tedarik Yönetimi</h1>
       <p>Pozsuz malzeme alımı: talep → teklif → sipariş → teslim alma → şantiye/merkez stok takibi. Pozlu Talep/Satınalma/Hakediş akışından bağımsızdır.</p>
     </div>
     <div class="card" style="padding:8px;margin-bottom:16px;">
