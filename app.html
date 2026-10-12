@@ -3913,8 +3913,7 @@ function renderFormTab(){
           <label>Ölçüm Şekli</label>
           <textarea placeholder="Projesine göre hesaplanacak alan/miktar açıklaması" oninput="onField('olcumSekli', this.value)">${escapeHtml(state.olcumSekli)}</textarea>
         </div>
-        <details class="more">
-          <summary>Diğer bilgiler (opsiyonel)</summary>
+        <div style="font-size:12.5px;font-weight:700;color:var(--primary);margin:14px 0 8px;text-transform:uppercase;letter-spacing:.4px;">Diğer Bilgiler (opsiyonel)</div>
           <div class="field">
             <label>Poz Açıklama</label>
             <textarea placeholder="Detaylı iş tanımı, dahil olan imalatlar vb." oninput="onField('pozAciklama', this.value)">${escapeHtml(state.pozAciklama)}</textarea>
@@ -3955,7 +3954,7 @@ function renderFormTab(){
             <label>UTS Adı</label>
             <input type="text" value="${escapeHtml(state.utsAdi)}" oninput="onField('utsAdi', this.value)">
           </div>
-        </details>
+
       </div>
     </div>
 
@@ -7042,16 +7041,20 @@ function render(){
         <button class="tab-btn active" onclick="setTab('personel')">Personel</button>
       </div>` : state.tab!=='home' ? `<div class="tabs">
         <button class="tab-btn ${state.tab==='home'?'active':''}" onclick="setTab('home')" title="Ana Ekran">🏠</button>
-        <span style="align-self:center;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);padding:0 2px 0 4px;border-right:1px solid var(--border);margin-right:4px;">Üretim</span>
+        <div style="display:inline-flex;flex-wrap:nowrap;gap:4px;">
+        <span style="align-self:center;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);padding:0 2px 0 4px;border-right:1px solid var(--border);margin-right:4px;white-space:nowrap;">Üretim</span>
         <button class="tab-btn ${state.tab==='form'?'active':''}" onclick="setTab('form')">Poz Oluştur</button>
         <button class="tab-btn ${state.tab==='list'?'active':''}" onclick="setTab('list')">Poz Listesi <span class="tab-badge">${state.list.length}</span></button>
         <button class="tab-btn ${state.tab==='talep'?'active':''}" onclick="setTab('talep')">Talep</button>
         <button class="tab-btn ${state.tab==='hakedis'?'active':''}" onclick="setTab('hakedis')">Hakediş</button>
         <button class="tab-btn ${state.tab==='butce'?'active':''}" onclick="setTab('butce')">💰 Bütçe</button>
         <button class="tab-btn ${state.tab==='raporlar'?'active':''}" onclick="setTab('raporlar')">📊 Raporlar</button>
-        <span style="align-self:center;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);padding:0 2px 0 10px;border-right:1px solid var(--border);margin-right:4px;">🛒 Satınalma</span>
+        </div>
+        <div style="display:inline-flex;flex-wrap:nowrap;gap:4px;">
+        <span style="align-self:center;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);padding:0 2px 0 10px;border-right:1px solid var(--border);margin-right:4px;white-space:nowrap;">🛒 Satınalma</span>
         <button class="tab-btn ${state.tab==='satinalma'?'active':''}" onclick="setTab('satinalma')">Satınalma / Keşif ${bekleyenSayisi ? '<span class="tab-badge">'+bekleyenSayisi+'</span>' : ''}</button>
         <button class="tab-btn ${state.tab==='mh'?'active':''}" onclick="setTab('mh')">📦 Tedarik Yönetimi</button>
+        </div>
         <button class="tab-btn ${state.tab==='manage'?'active':''}" onclick="setTab('manage')">⚙ Ayarlar</button>
       </div>` : ''}
     </div>
