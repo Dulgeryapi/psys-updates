@@ -148,6 +148,23 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   .org-ad{ font-weight:700; font-size:13px; color:var(--primary-dark); }
   .org-unvan{ font-size:11.5px; color:var(--muted); margin-top:1px; }
   .org-dept{ font-size:11px; color:var(--primary); margin-top:3px; }
+
+  /* ---------- acilis animasyonu ---------- */
+  @keyframes splashBuyu {
+    0%   { opacity:0; transform:scale(.04) rotate(-8deg); filter:blur(6px); }
+    55%  { opacity:1; transform:scale(1.1) rotate(1deg); filter:blur(0); }
+    75%  { transform:scale(.96) rotate(0deg); }
+    100% { opacity:1; transform:scale(1) rotate(0deg); }
+  }
+  @keyframes splashParlama {
+    0%, 100% { box-shadow:0 0 0 0 rgba(90,42,86,0); }
+    60% { box-shadow:0 0 70px 20px rgba(180,120,201,.35); }
+  }
+  @keyframes splashYaziGoster { to { opacity:1; } }
+  #acilisSplashLogo{ animation: splashBuyu 1.15s cubic-bezier(.22,.9,.3,1.3) forwards, splashParlama 1.6s ease forwards; border-radius:28px; background:#fff; padding:10px; }
+  #acilisSplashYazi{ animation: splashYaziGoster .6s ease forwards; animation-delay:1s; }
+  #acilisSplash{ transition: opacity .55s ease, visibility .55s ease; }
+  #acilisSplash.splash-kayboluyor{ opacity:0; visibility:hidden; pointer-events:none; }
   .home-motto{ text-align:center; margin-top:40px; padding-top:22px; border-top:1px solid #3a2f4a;
     font-family:'Space Grotesk',sans-serif; font-style:italic; font-size:14px; color:#b478c9; letter-spacing:.2px; }
   .build-credit{ position:fixed; right:14px; bottom:10px; font-size:10.5px; color:var(--muted); opacity:.65;
@@ -409,6 +426,10 @@ https://github.com/nodeca/pako/blob/main/LICENSE
 </style>
 </head>
 <body>
+<div id="acilisSplash" style="position:fixed;inset:0;z-index:99999;background:#15111c;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;gap:18px;">
+  <img id="acilisSplashLogo" alt="logo" style="width:200px;height:200px;object-fit:contain;">
+  <div id="acilisSplashYazi" style="color:#fff;font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700;letter-spacing:.5px;opacity:0;">Hoş Geldiniz</div>
+</div>
 <div class="app" id="app"></div>
 <div id="disDegisiklikBanner" style="display:none;position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:9999;
   background:#241b2e;color:#fff;padding:9px 16px;border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.25);
@@ -5523,8 +5544,8 @@ function renderHomeTab(){
   return `
     <div class="home-wrap">
       <div class="home-hero">
-        <div class="home-hero-logo">${(()=>{ const dlg = SEED_SIRKETLER.find(s=>s.kodu==='DLG'); return dlg && dlg.logo ? '<img src="'+dlg.logo+'" alt="logo" style="max-height:72px;max-width:220px;object-fit:contain;">' : 'PSYS'; })()}</div>
-        <h2 style="color:var(--primary);margin-top:10px;">Hoş Geldiniz</h2>
+        <div class="home-hero-logo">${LOGO_DATA_URI ? '<img src="'+LOGO_DATA_URI+'" alt="logo">' : 'PSYS'}</div>
+        <h2>Kurumsal Üretim Sistemleri</h2>
       </div>
       <div class="home-dep-icon-grid">${depHtml}</div>
       <div class="home-fixed-row">
@@ -9305,6 +9326,13 @@ function renderMlzsozPaneli(sz){
 }
 
 
+(function(){
+  var img = document.getElementById('acilisSplashLogo');
+  var kapsayici = document.getElementById('acilisSplash');
+  var dlg = SEED_SIRKETLER.find(function(s){ return s.kodu==='DLG'; });
+  if(img) img.src = (dlg && dlg.logo) ? dlg.logo : LOGO_DATA_URI;
+  setTimeout(function(){ if(kapsayici) kapsayici.classList.add('splash-kayboluyor'); }, 2300);
+})();
 loadAll();
 
 /* ---------- baska bir bilgisayar veri degistirdi mi: sessiz kontrol, mevcut ekrana hic dokunmaz ---------- */
