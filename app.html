@@ -497,7 +497,8 @@ const state = {
   tab: 'home',
   ana: '', alt: '', tali: '', santiye: '',
   pozTanimi: '', birim: '', tur: '', olcumSekli: '', pozAciklama: '',
-  uygulamaYeri: '', ozelAciklama: '',
+  uygulamaYeri: '', ozelAciklama: '', isvTemMalzeme: '', yukTemMalzeme: '', utsNo: '', utsFormNo: '', utsAdi: '', statu: 'Taslak',
+  pozKopyalaAcik: false, pozKopyalaArama: '',
   list: [],
   taxonomy: [],
   santiyeList: [],
@@ -860,6 +861,7 @@ function importAllData(fileInput){
 function resetFormText(){
   state.pozTanimi=''; state.olcumSekli=''; state.pozAciklama='';
   state.uygulamaYeri=''; state.ozelAciklama='';
+  state.isvTemMalzeme=''; state.yukTemMalzeme=''; state.utsNo=''; state.utsFormNo=''; state.utsAdi=''; state.statu='Taslak';
 }
 
 function showToast(msg, code){
@@ -878,6 +880,43 @@ function kopyalaPano(text){
   }
 }
 
+/* ---------- Poz Olustur: Yeni / Kopyala / Ara ikonlari ---------- */
+function pozFormYeni(){
+  if(!confirm('Form temizlensin mi? Girilen bilgiler kaybolur.')) return;
+  state.ana=''; state.alt=''; state.tali=''; state.santiye='';
+  resetFormText();
+  showToast('Form temizlendi.');
+  render();
+}
+function pozFormAra(){ setTab('list'); }
+function pozKopyalaAc(){ state.pozKopyalaAcik = true; state.pozKopyalaArama=''; render(); }
+function pozKopyalaKapat(){ state.pozKopyalaAcik = false; render(); }
+function pozKopyalaSec(pozNo){
+  const p = state.list.find(x=>x.pozNo===pozNo); if(!p) return;
+  state.ana = p.ana; state.alt = p.alt; state.tali = p.tali; state.santiye = p.santiye;
+  state.pozTanimi = p.pozTanimi; state.birim = p.birim; state.tur = p.tur;
+  state.olcumSekli = p.olcumSekli||''; state.pozAciklama = p.pozAciklama||'';
+  state.uygulamaYeri = p.uygulamaYeri||''; state.ozelAciklama = p.ozelAciklama||'';
+  state.isvTemMalzeme = p.isvTemMalzeme||''; state.yukTemMalzeme = p.yukTemMalzeme||'';
+  state.utsNo = p.utsNo||''; state.utsFormNo = p.utsFormNo||''; state.utsAdi = p.utsAdi||''; state.statu = 'Taslak';
+  state.pozKopyalaAcik = false;
+  showToast('Poz bilgileri kopyalandı, yeni Poz No otomatik verilecek:', pozNo);
+  render();
+}
+function pozKopyalaAramaYaz(v){
+  state.pozKopyalaArama = v;
+  const el = document.getElementById('pozKopyalaSonuc');
+  if(el) el.innerHTML = pozKopyalaListesi();
+}
+function pozKopyalaListesi(){
+  const q = state.pozKopyalaArama.trim().toLocaleLowerCase('tr-TR');
+  const sonuclar = (q ? state.list.filter(p=>p.pozNo.toLocaleLowerCase('tr-TR').includes(q) || p.pozTanimi.toLocaleLowerCase('tr-TR').includes(q)) : state.list).slice(-30).reverse();
+  if(!sonuclar.length) return '<div class="mg-empty">Eşleşen poz bulunamadı.</div>';
+  return `<div class="mg-list" style="max-height:260px;overflow:auto;">${sonuclar.map(p=>`
+    <div class="mg-list-item" onclick="pozKopyalaSec('${p.pozNo}')" style="cursor:pointer;">
+      <span class="poz-chip">${p.pozNo}</span> ${escapeHtml(p.pozTanimi)} <small style="color:var(--muted);">(${p.birim})</small>
+    </div>`).join('')}</div>`;
+}
 /* ---------- publish / list actions ---------- */
 function publish(){
   const sira = nextSira();
@@ -893,6 +932,8 @@ function publish(){
     pozTanimi: formatCumleTR(state.pozTanimi.trim()), birim: state.birim, tur: state.tur,
     olcumSekli: formatCumleTR(state.olcumSekli.trim()), pozAciklama: formatCumleTR(state.pozAciklama.trim()),
     uygulamaYeri: formatCumleTR(state.uygulamaYeri.trim()), ozelAciklama: formatCumleTR(state.ozelAciklama.trim()),
+    isvTemMalzeme: formatCumleTR(state.isvTemMalzeme.trim()), yukTemMalzeme: formatCumleTR(state.yukTemMalzeme.trim()),
+    utsNo: state.utsNo.trim(), utsFormNo: state.utsFormNo.trim(), utsAdi: formatCumleTR(state.utsAdi.trim()), statu: state.statu,
     tarih: new Date().toLocaleString('tr-TR')
   };
   state.list.push(entry);
@@ -3770,6 +3811,20 @@ function renderFormTab(){
   const canPublish = pozNo && state.pozTanimi.trim() && state.birim && state.tur;
 
   return `
+    <div class="page-head" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:10px;">
+      <div></div>
+      <div style="display:flex;gap:6px;">
+        <button class="icon-btn" onclick="pozFormYeni()" title="Formu temizle, yeni poz başlat">🆕 Yeni</button>
+        <button class="icon-btn" onclick="pozKopyalaAc()" title="Mevcut bir pozun bilgilerini kopyalayıp yeni poz oluştur">⧉ Kopyala</button>
+        <button class="icon-btn" onclick="pozFormAra()" title="Poz Listesi'nde ara">🔍 Ara</button>
+      </div>
+    </div>
+    ${state.pozKopyalaAcik ? `
+    <div class="card" style="margin-bottom:16px;">
+      <h2>⧉ Hangi Pozu Kopyalayayım? <button class="icon-btn" onclick="pozKopyalaKapat()" title="Kapat" style="float:right;">✕</button></h2>
+      <input type="text" placeholder="Poz No veya tanım ile arayın…" value="${escapeHtml(state.pozKopyalaArama)}" oninput="pozKopyalaAramaYaz(this.value)" autofocus>
+      <div id="pozKopyalaSonuc" style="margin-top:10px;">${pozKopyalaListesi()}</div>
+    </div>` : ''}
     <div class="strip-wrap">
       <div class="strip-label">Poz No Önizleme</div>
       <div class="strip">
@@ -3871,6 +3926,34 @@ function renderFormTab(){
           <div class="field">
             <label>Özel Açıklama</label>
             <textarea oninput="onField('ozelAciklama', this.value)">${escapeHtml(state.ozelAciklama)}</textarea>
+          </div>
+          <div class="row2">
+            <div class="field">
+              <label>İşveren Temin Malzeme</label>
+              <textarea placeholder="İşverenin temin edeceği malzemeler" oninput="onField('isvTemMalzeme', this.value)">${escapeHtml(state.isvTemMalzeme)}</textarea>
+            </div>
+            <div class="field">
+              <label>Yüklenici Temin Malzeme</label>
+              <textarea placeholder="Yüklenicinin temin edeceği malzemeler" oninput="onField('yukTemMalzeme', this.value)">${escapeHtml(state.yukTemMalzeme)}</textarea>
+            </div>
+          </div>
+          <div class="field">
+            <label>Statü</label>
+            <select onchange="onFieldRender('statu', this.value)">
+              <option ${state.statu==='Taslak'?'selected':''}>Taslak</option>
+              <option ${state.statu==='Yayınlı'?'selected':''}>Yayınlı</option>
+              <option ${state.statu==='Arşiv'?'selected':''}>Arşiv</option>
+            </select>
+          </div>
+          <div class="row2">
+            <div class="field"><label>UTS No <small style="color:var(--muted);">(Uygulama Teknik Şartname)</small></label>
+              <input type="text" value="${escapeHtml(state.utsNo)}" oninput="onField('utsNo', this.value)"></div>
+            <div class="field"><label>UTS Form No</label>
+              <input type="text" value="${escapeHtml(state.utsFormNo)}" oninput="onField('utsFormNo', this.value)"></div>
+          </div>
+          <div class="field">
+            <label>UTS Adı</label>
+            <input type="text" value="${escapeHtml(state.utsAdi)}" oninput="onField('utsAdi', this.value)">
           </div>
         </details>
       </div>
