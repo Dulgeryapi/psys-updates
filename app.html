@@ -7035,28 +7035,32 @@ function render(){
         </div>
       </div>
       <button class="tab-btn" onclick="yenileEkran()" title="Ekranı yenile (veri kaybolmaz)" style="margin-right:6px;">🔄 Yenile</button>
-      ${state.tab==='personel' ? `<div class="tabs">
+      ${(() => {
+        const URETIM_SEKMELERI = ['form','list','talep','hakedis','butce','raporlar'];
+        const SATINALMA_SEKMELERI = ['satinalma','mh'];
+        if(state.tab==='home') return '';
+        const depBtn = (dep, label, hedefTab) => `<button class="tab-btn ${dep===aktifDep?'active':''}" onclick="setTab('${hedefTab}')" style="font-weight:700;">${label}</button>`;
+        const aktifDep = state.tab==='personel' ? 'ik' : state.tab==='manage' ? 'ayarlar' : URETIM_SEKMELERI.includes(state.tab) ? 'uretim' : SATINALMA_SEKMELERI.includes(state.tab) ? 'satinalma' : '';
+        const depPilleri = `
         <button class="tab-btn" onclick="setTab('home')" title="Ana Ekran">🏠</button>
-        <span style="align-self:center;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);padding:0 2px 0 4px;border-right:1px solid var(--border);margin-right:4px;">İnsan Kaynakları ve Personel</span>
-        <button class="tab-btn active" onclick="setTab('personel')">Personel</button>
-      </div>` : state.tab!=='home' ? `<div class="tabs">
-        <button class="tab-btn ${state.tab==='home'?'active':''}" onclick="setTab('home')" title="Ana Ekran">🏠</button>
-        <div style="display:inline-flex;flex-wrap:nowrap;gap:4px;">
-        <span style="align-self:center;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);padding:0 2px 0 4px;border-right:1px solid var(--border);margin-right:4px;white-space:nowrap;">Üretim</span>
-        <button class="tab-btn ${state.tab==='form'?'active':''}" onclick="setTab('form')">Poz Oluştur</button>
-        <button class="tab-btn ${state.tab==='list'?'active':''}" onclick="setTab('list')">Poz Listesi <span class="tab-badge">${state.list.length}</span></button>
-        <button class="tab-btn ${state.tab==='talep'?'active':''}" onclick="setTab('talep')">Talep</button>
-        <button class="tab-btn ${state.tab==='hakedis'?'active':''}" onclick="setTab('hakedis')">Hakediş</button>
-        <button class="tab-btn ${state.tab==='butce'?'active':''}" onclick="setTab('butce')">💰 Bütçe</button>
-        <button class="tab-btn ${state.tab==='raporlar'?'active':''}" onclick="setTab('raporlar')">📊 Raporlar</button>
-        </div>
-        <div style="display:inline-flex;flex-wrap:nowrap;gap:4px;">
-        <span style="align-self:center;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);padding:0 2px 0 10px;border-right:1px solid var(--border);margin-right:4px;white-space:nowrap;">🛒 Satınalma</span>
-        <button class="tab-btn ${state.tab==='satinalma'?'active':''}" onclick="setTab('satinalma')">Satınalma / Keşif ${bekleyenSayisi ? '<span class="tab-badge">'+bekleyenSayisi+'</span>' : ''}</button>
-        <button class="tab-btn ${state.tab==='mh'?'active':''}" onclick="setTab('mh')">📦 Tedarik Yönetimi</button>
-        </div>
-        <button class="tab-btn ${state.tab==='manage'?'active':''}" onclick="setTab('manage')">⚙ Ayarlar</button>
-      </div>` : ''}
+        ${depBtn('uretim','🏗️ Üretim','form')}
+        ${depBtn('satinalma','🛒 Satınalma','satinalma')}
+        ${depBtn('ik','🧭 İK','personel')}
+        <button class="tab-btn ${aktifDep==='ayarlar'?'active':''}" onclick="setTab('manage')">⚙ Ayarlar</button>`;
+        const altSekmeler =
+          aktifDep==='uretim' ? `
+          <button class="tab-btn ${state.tab==='form'?'active':''}" onclick="setTab('form')">Poz Oluştur</button>
+          <button class="tab-btn ${state.tab==='list'?'active':''}" onclick="setTab('list')">Poz Listesi <span class="tab-badge">${state.list.length}</span></button>
+          <button class="tab-btn ${state.tab==='talep'?'active':''}" onclick="setTab('talep')">Talep</button>
+          <button class="tab-btn ${state.tab==='hakedis'?'active':''}" onclick="setTab('hakedis')">Hakediş</button>
+          <button class="tab-btn ${state.tab==='butce'?'active':''}" onclick="setTab('butce')">💰 Bütçe</button>
+          <button class="tab-btn ${state.tab==='raporlar'?'active':''}" onclick="setTab('raporlar')">📊 Raporlar</button>` :
+          aktifDep==='satinalma' ? `
+          <button class="tab-btn ${state.tab==='satinalma'?'active':''}" onclick="setTab('satinalma')">Satınalma / Keşif ${bekleyenSayisi ? '<span class="tab-badge">'+bekleyenSayisi+'</span>' : ''}</button>
+          <button class="tab-btn ${state.tab==='mh'?'active':''}" onclick="setTab('mh')">📦 Tedarik Yönetimi</button>` :
+          aktifDep==='ik' ? `<button class="tab-btn ${state.tab==='personel'?'active':''}" onclick="setTab('personel')">Personel</button>` : '';
+        return `<div class="tabs">${depPilleri}</div>${altSekmeler ? `<div class="tabs" style="margin-top:6px;">${altSekmeler}</div>` : ''}`;
+      })()}
     </div>
     ${body}
     <div class="footer-note">${state.tab==='personel' ? '' : 'Ana/Alt/Tali grup eşleşmeleri gerçek poz kayıtlarından türetilmiştir; "Ayarlar" sekmesinden ekleyip kaldırabilirsiniz.'}${hasStorage ? '' : ' Bu dosya doğrudan tarayıcıda açıldığı için değişiklikler kalıcı saklanmıyor, kapatmadan önce Excel aktarımı yapmayı unutmayın.'}</div>
