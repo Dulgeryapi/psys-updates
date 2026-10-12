@@ -142,9 +142,10 @@ function mailTransporterOlustur(cfg){
     secure: guvenlik === 'ssl',
     requireTLS: guvenlik === 'starttls',
     auth: { user: cfg.user, pass: cfg.pass },
-    connectionTimeout: 10000,
-    greetingTimeout: 10000,
-    socketTimeout: 15000,
+    connectionTimeout: 30000, // 30 saniye - self-signed/cPanel SSL el sikismasi yavas olabilir
+    greetingTimeout: 30000,
+    socketTimeout: 30000,
+    tls: { rejectUnauthorized: false }, // self-signed / guvenilmeyen sertifika zincirini yoksay
   });
 }
 function zamanAsimliCalistir(promise, msg, ms){
@@ -176,11 +177,11 @@ ipcMain.handle('mail-test-gonder', async () => {
   if(!cfg) return { error: 'Önce mail ayarlarını kaydedin.' };
   try{
     const transporter = mailTransporterOlustur(cfg);
-    await zamanAsimliCalistir(transporter.verify(), 'Sunucuya 20 saniyede bağlanılamadı (sunucu adresi/port yanlış veya erişilemiyor olabilir).', 20000);
+    await zamanAsimliCalistir(transporter.verify(), 'Sunucuya 35 saniyede bağlanılamadı (sunucu adresi/port yanlış veya erişilemiyor olabilir).', 35000);
     await zamanAsimliCalistir(transporter.sendMail({
       from: cfg.user, to: cfg.user, subject: 'Kurumsal Üretim Sistemleri — Test Maili',
       text: 'Bu bir test mailidir. Mail ayarlarınız doğru çalışıyor.',
-    }), 'Mail gönderimi 20 saniyede tamamlanamadı.', 20000);
+    }), 'Mail gönderimi 35 saniyede tamamlanamadı.', 35000);
     return { basarili: true };
   }catch(e){ return { error: e.message }; }
 });
@@ -189,7 +190,7 @@ ipcMain.handle('mail-gonder', async (event, { to, subject, text }) => {
   if(!cfg) return { ayarliDegil: true };
   try{
     const transporter = mailTransporterOlustur(cfg);
-    await zamanAsimliCalistir(transporter.sendMail({ from: cfg.user, to, subject, text }), 'Mail gönderimi 20 saniyede tamamlanamadı.', 20000);
+    await zamanAsimliCalistir(transporter.sendMail({ from: cfg.user, to, subject, text }), 'Mail gönderimi 35 saniyede tamamlanamadı.', 35000);
     return { basarili: true };
   }catch(e){ return { error: e.message }; }
 });
