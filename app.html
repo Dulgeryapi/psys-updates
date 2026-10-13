@@ -558,6 +558,7 @@ const state = {
   hkDigerAcik: true, hkYeniFormAcik: false,
   mh: null, mhSekme: 'talepler', mhF: mhBosForm(), mhAcikTalepId: '', mhTeklifTalepId: '',
   mhTedF: { ad:'', urunGrubu:'', sehir:'', yetkiliKisi:'', telefon:'', eposta:'', not:'' },
+  mhEditSatirId: '', mhEditSatirDraft: {},
   mhC: { yerId:'', kartId:'', miktar:'', tarih:'', kim:'', is:'', projeKodu:'' },
   mhG: { yerId:'', kartId:'', miktar:'', fiyat:'', not:'' },
   mhDevirYerId: '', mhS: { kartId:'', miktar:'', hedefYerId:'', not:'' }, mhHF: { kartId:'', yerId:'' },
@@ -1473,6 +1474,13 @@ const TOPLU = {
     engel: t => { const b = talepSozlesmeyeBagliMi(t.talepNo); return b ? `"${b}" sözleşmesine bağlı` : null; },
     uygula: (ids) => { state.talepler = state.talepler.filter(x=>!ids.includes(x.id)); if(ids.includes(state.aktifTalepId)) state.aktifTalepId=''; saveTalepler(); }
   },
+  fiyatbekleyen: {
+    ad: 'bekleyen kalem',
+    bul: id => { const [tid,sid] = id.split('::'); const h = state.talepler.find(t=>t.id===tid); const s = h && h.satirlar.find(x=>x.id===sid); return s ? {h,s} : null; },
+    etiket: o => `${o.s.pozNo||o.s.tanim} — ${o.h.talepNo}`,
+    engel: () => null,
+    uygula: (ids, objs) => { objs.forEach(o=>{ o.h.satirlar = o.h.satirlar.filter(x=>x.id!==o.s.id); }); saveTalepler(); }
+  },
   kesif: {
     ad: 'keşif kalemi',
     bul: id => { const [tid,sid] = id.split('::'); const h = state.talepler.find(t=>t.id===tid); const s = h && h.satirlar.find(x=>x.id===sid); return s ? {h,s} : null; },
@@ -1507,6 +1515,28 @@ function topluSil(liste, gorunenKey){
   silinecek.forEach(x=>{ delete state.topluSecili[liste][x.id]; });
   render();
   showToast(`${silinecek.length} kayıt ${liste==='kesif'?'Keşif Tablosu\'ndan çıkarıldı':'silindi'}.` + (atlanan.length ? ` ${atlanan.length} tanesi bağlı olduğu için atlandı.` : ''));
+}
+function bulkKesifKaliciSil(){
+  const secilenler = Object.keys(state.topluSecili.kesif||{}).filter(k=>state.topluSecili.kesif[k]);
+  if(secilenler.length===0){ showToast('Önce en az bir satır işaretleyin.'); return; }
+  let silinecekler = [], baglananlar = 0;
+  secilenler.forEach(key=>{
+    const [talepId, satirId] = key.split('::');
+    const header = state.talepler.find(t=>t.id===talepId);
+    if(!header) return;
+    const bagliSozlesme = talepSozlesmeyeBagliMi(header.talepNo);
+    if(bagliSozlesme){ baglananlar++; return; }
+    silinecekler.push({talepId, satirId});
+  });
+  if(!silinecekler.length){ showToast('Seçilen kalemler sözleşmeye bağlı olduğu için silinemiyor.'); return; }
+  if(!confirm(`${silinecekler.length} kalem Keşif Tablosu'ndan ve Talep'ten KALICI olarak silinsin mi? Bu işlem geri alınamaz.${baglananlar?` (${baglananlar} kalem sözleşmeye bağlı olduğu için atlanacak)`:''}`)) return;
+  silinecekler.forEach(({talepId, satirId})=>{
+    const header = state.talepler.find(t=>t.id===talepId); if(!header) return;
+    header.satirlar = header.satirlar.filter(s=>s.id!==satirId);
+    delete state.topluSecili.kesif[talepId+'::'+satirId];
+  });
+  saveTalepler(); render();
+  showToast(`${silinecekler.length} kalem kalıcı olarak silindi.`);
 }
 function kesiftenCikar(talepId, satirId){
   const header = state.talepler.find(t=>t.id===talepId);
@@ -4348,7 +4378,7 @@ function renderTalepTab(){
       </div>
 
       <div class="card" id="pozEkleKarti">
-        <h2><span class="num">2</span>Kalem Ekle ${!aktif ? '<small>önce talep başlatın</small>' : ''}</h2>
+        <h2><span class="num">2</span>Talep Oluştur ${!aktif ? '<small>önce talep başlatın</small>' : ''}</h2>
         <div style="display:flex;gap:4px;margin-bottom:14px;">
           <button class="tab-btn ${state.talepAltSekme==='muhendislik'?'active':''}" style="font-size:12.5px;padding:8px 14px;" onclick="onTalepAltSekme('muhendislik')" ${!aktif?'disabled':''}>Mühendislik Talebi</button>
           <button class="tab-btn ${state.talepAltSekme==='hizmet'?'active':''}" style="font-size:12.5px;padding:8px 14px;" onclick="onTalepAltSekme('hizmet')" ${!aktif?'disabled':''}>Hizmet</button>
@@ -4487,6 +4517,10 @@ function renderTalepTab(){
 
 /* ---------- render: satınalma / keşif tab ---------- */
 function toggleSatinalmaSecili(key, checked){ state.satinalmaSecili[key] = checked; render(); }
+function toggleTumFiyatGirisiSecili(checked){
+  pendingSatirlar().forEach(s=>{ state.satinalmaSecili[fiyatKey(s.talepId, s.id)] = checked; });
+  render();
+}
 function toggleTalepGrubuSecili(talepId, checked){
   pendingSatirlar().filter(s=>s.talepId===talepId).forEach(s => { state.satinalmaSecili[fiyatKey(s.talepId, s.id)] = checked; });
   render();
@@ -4708,6 +4742,28 @@ function renderTeklifPaneli(talepId){
       </div>
     </div>`;
 }
+function bulkDeleteSatirlar(){
+  const secilenler = Object.keys(state.satinalmaSecili).filter(k=>state.satinalmaSecili[k]);
+  if(secilenler.length===0){ showToast('Önce en az bir satır işaretleyin.'); return; }
+  let silinecekler = [], baglananlar = 0;
+  secilenler.forEach(key=>{
+    const [talepId, satirId] = key.split('::');
+    const header = state.talepler.find(t=>t.id===talepId);
+    if(!header) return;
+    const bagliSozlesme = talepSozlesmeyeBagliMi(header.talepNo);
+    if(bagliSozlesme){ baglananlar++; return; }
+    silinecekler.push({talepId, satirId});
+  });
+  if(!silinecekler.length){ showToast('Seçilenlerin hepsi sözleşmeye bağlı olduğu için silinemedi.'); return; }
+  if(!confirm(`${silinecekler.length} satır kalıcı olarak silinsin mi? (geri alınamaz)` + (baglananlar?` ${baglananlar} tanesi sözleşmeye bağlı olduğu için atlanacak.`:''))) return;
+  silinecekler.forEach(({talepId, satirId})=>{
+    const header = state.talepler.find(t=>t.id===talepId);
+    if(header){ header.satirlar = header.satirlar.filter(s=>s.id!==satirId); delete state.satinalmaSecili[talepId+'::'+satirId]; delete state.fiyatTaslak[fiyatKey(talepId,satirId)]; }
+  });
+  saveTalepler();
+  showToast(`${silinecekler.length} satır silindi.` + (baglananlar?` ${baglananlar} tanesi atlandı.`:''));
+  render();
+}
 function bulkConvertToSozlesme(){
   const secilenler = Object.keys(state.satinalmaSecili).filter(k=>state.satinalmaSecili[k]);
   if(secilenler.length===0){ showToast('Önce en az bir satır işaretleyin.'); return; }
@@ -4797,9 +4853,11 @@ function renderSatinalmaTab(){
     <div class="card">
       <h2><span class="num">1</span>Fiyat Girişi <small>${bekleyenler.length} kalem bekliyor</small></h2>
       <div class="disabled-hint" style="margin-bottom:10px;">"Fiyatı Onayla" bu kalemi Keşif Tablosu'na taşır. Gerçek Sözleşme No, aşağıda Teyit Formu oluşturup "Sözleşmeye Dönüştür" dediğinizde oluşur.</div>
+      ${bekleyenler.length ? `<label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;margin-bottom:10px;"><input type="checkbox" ${bekleyenler.length && bekleyenler.every(s=>state.satinalmaSecili[fiyatKey(s.talepId,s.id)])?'checked':''} onchange="toggleTumFiyatGirisiSecili(this.checked)"> Hepsini Seç (tüm talepler)</label>` : ''}
       ${grupBloklari}
       <div class="actions" style="margin-top:0;">
         <button class="btn btn-ghost" ${secilenSayisi?'':'disabled'} onclick="bulkConvertToSozlesme()">✓ İşaretlenenleri (${secilenSayisi}) Tek Seferde Onayla</button>
+        <button class="btn btn-ghost del-btn" ${secilenSayisi?'':'disabled'} onclick="bulkDeleteSatirlar()">🗑 İşaretlenenleri (${secilenSayisi}) Sil</button>
       </div>
     </div>
 
@@ -4817,6 +4875,7 @@ function renderSatinalmaTab(){
         </div>
       </div>
       ${topluBar('kesif','kesif',items.map(t=>t.talepId+'::'+t.id),'Seçilenleri Keşiften Çıkar')}
+      ${Object.values(state.topluSecili.kesif||{}).some(Boolean) ? `<div style="margin:-4px 0 10px;"><button class="btn btn-ghost btn-sm del-btn" onclick="bulkKesifKaliciSil()">🗑 Seçilenleri Kalıcı Olarak Sil (Talep'ten de kaldırır)</button></div>` : ''}
       <div class="table-wrap">
         <table>
           <thead><tr><th></th><th>Proje Adı</th><th>Poz No</th><th>Poz Tanımı</th><th>Birim</th><th>Miktar</th><th>Birim Fiyat (TL)</th><th>Tutar (TL)</th><th></th></tr></thead>
@@ -6895,10 +6954,17 @@ function renderSozlesmelerTab(){
 function deleteHakedis(hakedisId){
   const h = state.hakedisler.find(x=>x.id===hakedisId);
   if(!h) return;
-  if(!confirm(`"${h.hakedisId}" numaralı hakedişi tamamen silmek istediğinize emin misiniz? Bu işlem geri alınamaz.`)) return;
+  if(h.statu==='Kapatıldı'){ showToast('Kapatıldı durumundaki bir hakediş silinemez. Önce "Tekrar Aç" ile Planlandı durumuna döndürün.'); return; }
+  const sonrakiVar = hakedislerOf(h.projeKodu, h.ustaId).some(x => x.id!==h.id && x.hakedisNo > h.hakedisNo);
+  if(sonrakiVar){ showToast('Bu projede/ustada bu hakedişten sonraki bir hakediş var. Kümülatif zincir bozulmasın diye, önce sonraki hakedişler kaldırılmadan bu hakediş silinemez.'); return; }
+  const dogrulamaMetni = String(h.hakedisId);
+  const girilen = prompt(`Bu hakedişi KALICI olarak silmek üzeresiniz, bu işlem geri alınamaz.\n\nOnaylamak için hakediş numarasını aynen yazın: ${dogrulamaMetni}`);
+  if(girilen===null) return;
+  if(girilen.trim() !== dogrulamaMetni){ showToast('Yazdığınız numara eşleşmedi, hakediş silinmedi.'); return; }
   state.hakedisler = state.hakedisler.filter(x=>x.id!==hakedisId);
   if(state.aktifHakedisId===hakedisId) state.aktifHakedisId='';
   saveHakedisler(); render();
+  showToast('Hakediş silindi.');
 }
 function renderHakedisListeTab(){
   const rows = hakedisListesiFiltreli();
@@ -7716,6 +7782,43 @@ function mhTalepOlustur(){
 }
 function mhBosForm(){ return { yerId:'', projeKodu:'', notu:'', satir:{ tur:'Malzeme', tanim:'', birim:'', miktar:'', karsila:'', kartId:null }, satirlar:[] }; }
 function mhTalepAc(id){ state.mhAcikTalepId = (state.mhAcikTalepId===id) ? '' : id; render(); }
+function mhTalepSatirSil(tid, lid){
+  const t = state.mh.talepler.find(x=>x.id===tid); if(!t) return;
+  const l = t.satirlar.find(x=>x.id===lid); if(!l) return;
+  if(mhSatirSiparisEdilen(l) > 0 || mhSatirKarsila(l) > 0){ showToast('Bu satırdan sipariş/karşılama yapılmış, silinemez.'); return; }
+  if(!confirm(`"${l.tanim}" satırı talepten silinsin mi?`)) return;
+  t.satirlar = t.satirlar.filter(x=>x.id!==lid);
+  saveMh(); render();
+}
+function mhTalepSatirDuzenleAc(tid, lid){
+  const t = state.mh.talepler.find(x=>x.id===tid); const l = t && t.satirlar.find(x=>x.id===lid); if(!l) return;
+  state.mhEditSatirId = lid;
+  state.mhEditSatirDraft = { tanim: l.tanim, miktar: l.miktar };
+  render();
+}
+function mhTalepSatirDuzenleKapat(){ state.mhEditSatirId=''; state.mhEditSatirDraft={}; render(); }
+function onMhEditSatir(alan, v){ state.mhEditSatirDraft[alan] = v; }
+function mhTalepSatirDuzenleKaydet(tid, lid){
+  const t = state.mh.talepler.find(x=>x.id===tid); const l = t && t.satirlar.find(x=>x.id===lid); if(!l) return;
+  const d = state.mhEditSatirDraft;
+  const yeniMiktar = mhSayi(d.miktar);
+  if(!d.tanim.trim()){ showToast('Tanım boş olamaz.'); return; }
+  if(!(yeniMiktar > 0)){ showToast('Geçerli bir miktar girin.'); return; }
+  const kullanilan = mhSatirSiparisEdilen(l) + mhSatirKarsila(l);
+  if(yeniMiktar < kullanilan){ showToast(`Miktar, zaten karşılanan/sipariş edilen ${mhFmt(kullanilan)} biriminden az olamaz.`); return; }
+  l.tanim = formatCumleTR(d.tanim.trim()); l.miktar = yeniMiktar;
+  state.mhEditSatirId=''; state.mhEditSatirDraft={};
+  saveMh(); render();
+  showToast('Satır güncellendi.');
+}
+function mhTalepKaliciSil(id){
+  const t = state.mh.talepler.find(x=>x.id===id); if(!t) return;
+  if(mhTalepSiparisVarMi(t)){ showToast('Sipariş verilmiş bir talep kalıcı olarak silinemez. Önce siparişleri iptal edin.'); return; }
+  if(!confirm(`"${t.no}" talebi KALICI OLARAK silinsin mi? Bu işlem geri alınamaz.`)) return;
+  state.mh.talepler = state.mh.talepler.filter(x=>x.id!==id);
+  saveMh(); render();
+  showToast('Talep kalıcı olarak silindi.');
+}
 function mhTalepIptal(id){
   const t = state.mh.talepler.find(x=>x.id===id); if(!t) return;
   if(mhTalepSiparisVarMi(t)){ showToast('Bu talep için sipariş(ler) oluşturulmuş, iptal edilemez. Önce siparişleri iptal edin.'); return; }
@@ -7745,10 +7848,23 @@ function mhRenderTalepler(){
     const detay = acik ? `
       <tr><td colspan="7" style="background:var(--primary-tint);">
         <div style="font-size:12.5px;margin-bottom:6px;">${t.projeKodu?`Proje: <b>${escapeHtml(t.projeKodu)}</b> · `:''}Teslim yeri: <b>${escapeHtml(mhYerAd(t.yerId))}</b>${t.notu?` · Not: ${escapeHtml(t.notu)}`:''}</div>
-        <table><thead><tr><th>Kod</th><th>Tür</th><th>Tanım</th><th>Birim</th><th style="text-align:right;">Talep</th><th style="text-align:right;">Merkez'den</th><th style="text-align:right;">Sipariş</th></tr></thead><tbody>
-        ${t.satirlar.map(l=>{ const k = mhKartGetir(l.kartId)||{}; const mk = mhSatirKarsila(l); return `<tr><td><span class="poz-chip">${escapeHtml(k.kod||'')}</span></td><td>${l.tur}</td><td>${escapeHtml(l.tanim)}</td><td>${escapeHtml(l.birim)}</td><td style="text-align:right;">${mhFmt(l.miktar)}</td><td style="text-align:right;">${mk?mhFmt(mk):'—'}</td><td style="text-align:right;">${mhFmt(mhSiparisMiktari(t,l))}</td></tr>`; }).join('')}
+        <table><thead><tr><th>Kod</th><th>Tür</th><th>Tanım</th><th>Birim</th><th style="text-align:right;">Talep</th><th style="text-align:right;">Merkez'den</th><th style="text-align:right;">Sipariş</th><th></th></tr></thead><tbody>
+        ${t.satirlar.map(l=>{
+          const k = mhKartGetir(l.kartId)||{}; const mk = mhSatirKarsila(l);
+          const dokunulmus = mhSatirSiparisEdilen(l) > 0 || mk > 0;
+          if(state.mhEditSatirId===l.id){
+            const d = state.mhEditSatirDraft;
+            return `<tr style="background:var(--primary-tint);"><td colspan="3"><input type="text" value="${escapeHtml(d.tanim)}" oninput="onMhEditSatir('tanim', this.value)" style="width:100%;"></td><td>${escapeHtml(l.birim)}</td><td><input type="text" inputmode="decimal" value="${escapeHtml(String(d.miktar))}" oninput="onMhEditSatir('miktar', this.value)" style="width:70px;text-align:right;"></td><td style="text-align:right;">${mk?mhFmt(mk):'—'}</td><td style="text-align:right;">${mhFmt(mhSiparisMiktari(t,l))}</td>
+              <td style="white-space:nowrap;"><button class="icon-btn" onclick="mhTalepSatirDuzenleKaydet('${t.id}','${l.id}')" title="Kaydet">✓</button><button class="icon-btn" onclick="mhTalepSatirDuzenleKapat()" title="Vazgeç">✕</button></td></tr>`;
+          }
+          return `<tr><td><span class="poz-chip">${escapeHtml(k.kod||'')}</span></td><td>${l.tur}</td><td>${escapeHtml(l.tanim)}</td><td>${escapeHtml(l.birim)}</td><td style="text-align:right;">${mhFmt(l.miktar)}</td><td style="text-align:right;">${mk?mhFmt(mk):'—'}</td><td style="text-align:right;">${mhFmt(mhSiparisMiktari(t,l))}</td>
+            <td style="white-space:nowrap;">${!t.iptal && !dokunulmus ? `<button class="icon-btn" onclick="mhTalepSatirDuzenleAc('${t.id}','${l.id}')" title="Düzelt">✎</button><button class="icon-btn del-btn" onclick="mhTalepSatirSil('${t.id}','${l.id}')" title="Satırı sil">✕</button>` : ''}</td></tr>`;
+        }).join('')}
         </tbody></table>
-        ${!t.iptal && !mhTalepSiparisVarMi(t) ? `<div style="margin-top:8px;"><button class="btn btn-ghost btn-sm" onclick="mhTalepIptal('${t.id}')">Talebi İptal Et</button></div>` : ''}
+        <div style="margin-top:8px;display:flex;gap:8px;">
+          ${!t.iptal && !mhTalepSiparisVarMi(t) ? `<button class="btn btn-ghost btn-sm" onclick="mhTalepIptal('${t.id}')">Talebi İptal Et</button>` : ''}
+          <button class="icon-btn del-btn" onclick="mhTalepKaliciSil('${t.id}')" title="Talebi kalıcı olarak sil">🗑 Kalıcı Sil</button>
+        </div>
       </td></tr>` : '';
     return `<tr>
       <td><span class="poz-chip">${t.no}</span></td>
@@ -8813,9 +8929,21 @@ function izinIptalEt(id){
 }
 function izinReddet(id){
   const i = state.izinKayitlari.find(x=>x.id===id); if(!i || (i.durum!=='Beklemede' && i.durum!=='Muhasebe Onayladı')) return;
-  if(!confirm('Bu izin talebi reddedilsin mi?')) return;
+  const aciklama = prompt('İzin talebi reddediliyor. Lütfen açıklama/sebep yazın:');
+  if(aciklama===null) return;
+  if(!aciklama.trim()){ showToast('Açıklama girilmeden reddedilemez.'); return; }
   i.durum = 'Reddedildi';
+  i.redAciklamasi = formatCumleTR(aciklama.trim());
   saveIzinKayitlari(); render();
+  const p = state.personeller.find(x=>x.id===i.personelId);
+  if(p && p.email){
+    const konu = `İzin Talebiniz Reddedildi — ${i.no}`;
+    const govde = `Sayın ${p.ad},\n\n${i.baslangic} - ${i.bitis} tarihleri arasındaki izin talebiniz reddedilmiştir.\n\nAçıklama: ${i.redAciklamasi}`;
+    izinMailGonder(p.email, konu, govde, `mailto:${p.email}?subject=${encodeURIComponent(konu)}&body=${encodeURIComponent(govde)}`);
+    showToast('İzin reddedildi, personele bildirim maili gönderildi.');
+  } else if(p && !p.email){
+    showToast('İzin reddedildi. Personel için e-posta tanımlı olmadığından bildirim maili gönderilemedi.');
+  }
 }
 function startEditIzin(id){
   const i = state.izinKayitlari.find(x=>x.id===id); if(!i || i.durum!=='Beklemede') return;
