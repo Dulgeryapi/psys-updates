@@ -7440,17 +7440,24 @@ function mhSatirKarsila(l){
   const s = state.mh.sevkler.find(x=>x.id===l.sevkId);
   return (s && s.durum!=='Reddedildi' && s.durum!=='İptal') ? s.miktar : 0;
 }
-function mhSiparisMiktari(t, l){ return Math.max(0, l.miktar - mhSatirKarsila(l)); }
+function mhSatirSiparisEdilen(l){ // bu talep satirindan (l.id) daha once verilmis, iptal olmayan tum siparislerin toplam miktari
+  let t = 0;
+  state.mh.siparisler.forEach(s=>{ if(s.iptal) return; s.satirlar.forEach(sl=>{ if(sl.talepSatirId===l.id) t += sl.miktar; }); });
+  return t;
+}
+function mhSiparisMiktari(t, l){ return Math.max(0, l.miktar - mhSatirKarsila(l) - mhSatirSiparisEdilen(l)); }
+function mhTalepSiparisVarMi(t){ return state.mh.siparisler.some(s=>!s.iptal && s.talepId===t.id); }
 function mhTalepDurumu(t){
   if(t.iptal) return 'İptal';
-  if(t.siparisId) return 'Siparişe Dönüştü';
   const siparisSatiri = t.satirlar.filter(l=>mhSiparisMiktari(t,l) > 0);
-  if(!siparisSatiri.length) return 'Merkez\'den Karşılanıyor';
+  const siparisVar = mhTalepSiparisVarMi(t);
+  if(!siparisSatiri.length) return siparisVar ? 'Siparişe Dönüştü' : 'Merkez\'den Karşılanıyor';
+  if(siparisVar) return 'Kısmi Sipariş Verildi';
   const fiyatVar = (t.teklifler||[]).some(k=>Object.values(k.fiyatlar||{}).some(fy=>['nakit','kk','cek'].some(tip=>mhSayi(fy[tip]) > 0)));
   return fiyatVar ? 'Teklifte' : 'Teklif Bekliyor';
 }
 function mhTeklifTalepler(){
-  return state.mh.talepler.filter(t=>!t.iptal && !t.siparisId && t.satirlar.some(l=>mhSiparisMiktari(t,l) > 0));
+  return state.mh.talepler.filter(t=>!t.iptal && t.satirlar.some(l=>mhSiparisMiktari(t,l) > 0));
 }
 function mhSiparisDurumu(s){
   if(s.iptal) return 'İptal';
@@ -7695,7 +7702,7 @@ function mhBosForm(){ return { yerId:'', projeKodu:'', notu:'', satir:{ tur:'Mal
 function mhTalepAc(id){ state.mhAcikTalepId = (state.mhAcikTalepId===id) ? '' : id; render(); }
 function mhTalepIptal(id){
   const t = state.mh.talepler.find(x=>x.id===id); if(!t) return;
-  if(t.siparisId){ showToast('Bu talep için sipariş oluşturulmuş, iptal edilemez. Önce siparişi iptal edin.'); return; }
+  if(mhTalepSiparisVarMi(t)){ showToast('Bu talep için sipariş(ler) oluşturulmuş, iptal edilemez. Önce siparişleri iptal edin.'); return; }
   const ilerleyen = state.mh.sevkler.filter(s=>s.talepId===t.id && (s.durum==='Yolda' || s.durum==='Teslim Edildi'));
   if(ilerleyen.length){ showToast('Merkez\'den sevk başladığı için talep iptal edilemez.'); return; }
   if(!confirm(`"${t.no}" talebi iptal edilsin mi? Bekleyen Merkez sevk istekleri de iptal edilir.`)) return;
@@ -7725,7 +7732,7 @@ function mhRenderTalepler(){
         <table><thead><tr><th>Kod</th><th>Tür</th><th>Tanım</th><th>Birim</th><th style="text-align:right;">Talep</th><th style="text-align:right;">Merkez'den</th><th style="text-align:right;">Sipariş</th></tr></thead><tbody>
         ${t.satirlar.map(l=>{ const k = mhKartGetir(l.kartId)||{}; const mk = mhSatirKarsila(l); return `<tr><td><span class="poz-chip">${escapeHtml(k.kod||'')}</span></td><td>${l.tur}</td><td>${escapeHtml(l.tanim)}</td><td>${escapeHtml(l.birim)}</td><td style="text-align:right;">${mhFmt(l.miktar)}</td><td style="text-align:right;">${mk?mhFmt(mk):'—'}</td><td style="text-align:right;">${mhFmt(mhSiparisMiktari(t,l))}</td></tr>`; }).join('')}
         </tbody></table>
-        ${!t.iptal && !t.siparisId ? `<div style="margin-top:8px;"><button class="btn btn-ghost btn-sm" onclick="mhTalepIptal('${t.id}')">Talebi İptal Et</button></div>` : ''}
+        ${!t.iptal && !mhTalepSiparisVarMi(t) ? `<div style="margin-top:8px;"><button class="btn btn-ghost btn-sm" onclick="mhTalepIptal('${t.id}')">Talebi İptal Et</button></div>` : ''}
       </td></tr>` : '';
     return `<tr>
       <td><span class="poz-chip">${t.no}</span></td>
@@ -7783,12 +7790,23 @@ function mhTeklifFiyatYaz(tid, kid, lid, tip, v){
   k.fiyatlar[lid][tip] = v;
   mhTeklifToplamGuncelle(tid, kid);
 }
+function mhTeklifMiktarYaz(tid, kid, lid, v){
+  const k = mhTeklifBul(tid, kid); if(!k) return;
+  if(!k.siparisMiktar) k.siparisMiktar = {};
+  k.siparisMiktar[lid] = v;
+  mhTeklifToplamGuncelle(tid, kid);
+}
+function mhTeklifSiparisMiktariGetir(t, k, l){
+  const kalan = mhSiparisMiktari(t, l);
+  const girilen = (k.siparisMiktar && k.siparisMiktar[l.id]!==undefined) ? mhSayi(k.siparisMiktar[l.id]) : kalan;
+  return Math.max(0, Math.min(girilen, kalan)); // kalandan fazla siparis edilemez
+}
 function mhTeklifToplamHesapla(t, k, tip){
-  const satirlar = t.satirlar.filter(l=>mhSiparisMiktari(t,l) > 0);
+  const satirlar = t.satirlar.filter(l=>mhSiparisMiktari(t,l) > 0 && mhTeklifSiparisMiktariGetir(t,k,l) > 0);
   let toplam = 0, tam = satirlar.length > 0;
   satirlar.forEach(l=>{
     const p = mhSayi((k.fiyatlar[l.id]||{})[tip]);
-    if(p > 0) toplam += p * mhSiparisMiktari(t,l); else tam = false;
+    if(p > 0) toplam += p * mhTeklifSiparisMiktariGetir(t,k,l); else tam = false;
   });
   return { toplam, tam };
 }
@@ -7813,24 +7831,28 @@ function mhSiparisOlusturYeni(tid, kid, tip){
   const t = state.mh.talepler.find(x=>x.id===tid); const k = mhTeklifBul(tid, kid); if(!t || !k) return;
   const firma = String(k.firma||'').trim();
   if(!firma){ showToast('Firma adini girin.'); return; }
-  const satirlar = t.satirlar.filter(l=>mhSiparisMiktari(t,l) > 0);
+  // sadece bu firmaya siparis edilecek (miktar > 0 girilmis) satirlari al
+  const satirlar = t.satirlar.filter(l=>mhSiparisMiktari(t,l) > 0 && mhTeklifSiparisMiktariGetir(t,k,l) > 0);
+  if(!satirlar.length){ showToast('Bu firmaya siparis edilecek bir miktar girilmemis.'); return; }
+  const miktarlar = satirlar.map(l=>mhTeklifSiparisMiktariGetir(t,k,l));
   const fiyatlar = satirlar.map(l=>mhSayi((k.fiyatlar[l.id]||{})[tip]));
-  if(fiyatlar.some(p=>!(p > 0))){ showToast('Bu firma / odeme sekli icin tum satirlarin KDV haric birim fiyatini girin.'); return; }
+  if(fiyatlar.some(p=>!(p > 0))){ showToast('Siparis miktari girilen satirlarin tumunde KDV haric birim fiyat da girilmeli.'); return; }
   let kdv = mhSayi((document.getElementById('mhKdvOrani')||{}).value);
   if(isNaN(kdv) || kdv < 0) kdv = 20;
   const yerId = (document.getElementById('mhSipYer')||{}).value || t.yerId;
   const odemeAdi = { nakit:'Nakit', kk:'Kredi Karti Taksitli', cek:'Cek' }[tip];
+  const bolunmusMu = satirlar.some(l => miktarlar[satirlar.indexOf(l)] < mhSiparisMiktari(t,l));
   const s = { id: uid('MHS'), no: '', tarih: mhBugun(), talepId: t.id, talepNo: t.no, firma, odemeSekli: odemeAdi, teklifAciklama: k.aciklama||'', firmaLink: k.tur==='link'?k.link:'',
     kdvOrani: kdv, teslimYeriId: yerId, iptal:false, projeKodu: t.projeKodu||'', onayDurumu: 'Onay Bekliyor',
-    satirlar: satirlar.map((l,i)=>({ id: uid('SS'), kartId:l.kartId, tur:l.tur, tanim:l.tanim, birim:l.birim, miktar: mhSiparisMiktari(t,l), birimFiyat: fiyatlar[i], teslimAlinan:0 })) };
+    satirlar: satirlar.map((l,i)=>({ id: uid('SS'), talepSatirId: l.id, kartId:l.kartId, tur:l.tur, tanim:l.tanim, birim:l.birim, miktar: miktarlar[i], birimFiyat: fiyatlar[i], teslimAlinan:0 })) };
   const ara = s.satirlar.reduce((a,l)=>a + l.miktar*l.birimFiyat, 0);
-  if(!confirm('"' + firma + '" (' + odemeAdi + ') kazanan olarak onaya gonderilsin mi?\n\nAra toplam (KDV haric): ' + paraTR(ara) + ' TL\nKDV %' + kdv + ': ' + paraTR(ara*kdv/100) + ' TL\nGenel toplam: ' + paraTR(ara*(1+kdv/100)) + ' TL\n\nFinans ve Yonetim Kurulu onayindan sonra siparis kesinlesecek.')) return;
+  const bolunmeNotu = bolunmusMu ? '\n\n(Not: Bu talebin bir kısmı — kalan miktarlar — başka firma(lara) ayrıca sipariş edilebilir.)' : '';
+  if(!confirm('"' + firma + '" (' + odemeAdi + ') kazanan olarak onaya gonderilsin mi?\n\nAra toplam (KDV haric): ' + paraTR(ara) + ' TL\nKDV %' + kdv + ': ' + paraTR(ara*kdv/100) + ' TL\nGenel toplam: ' + paraTR(ara*(1+kdv/100)) + ' TL\n\nFinans ve Yonetim Kurulu onayindan sonra siparis kesinlesecek.' + bolunmeNotu)) return;
   s.no = mhNo('siparis');
   state.mh.siparisler.push(s);
-  t.siparisId = s.id;
   if(k.tur==='yeni') mhTedarikciEkle(firma);
   saveMh();
-  showToast('Onaya gonderildi:', s.no);
+  showToast(bolunmusMu ? 'Kısmi sipariş onaya gönderildi, kalan miktar talepte bekliyor:' : 'Onaya gonderildi:', s.no);
   render();
 }
 function mhSiparisFinansOnayla(id){
@@ -7948,8 +7970,13 @@ function mhRenderTeklif(){
       const satirRows = satirlar.map(l=>{
         const kart = mhKartGetir(l.kartId)||{};
         const fy = k.fiyatlar[l.id]||{};
+        const kalan = mhSiparisMiktari(t,l);
+        const siparisMiktari = (k.siparisMiktar && k.siparisMiktar[l.id]!==undefined) ? k.siparisMiktar[l.id] : kalan;
         const hucre = (tip)=>`<td><input type="text" inputmode="decimal" placeholder="0,00" value="${escapeHtml(fy[tip]||'')}" oninput="mhTeklifFiyatYaz('${t.id}','${k.id}','${l.id}','${tip}', this.value)" onchange="saveMh()" style="width:100%;text-align:right;"></td>`;
-        return `<tr><td><span class="poz-chip">${escapeHtml(kart.kod||'')}</span></td><td>${escapeHtml(l.tanim)}</td><td style="text-align:right;">${mhFmt(mhSiparisMiktari(t,l))} ${escapeHtml(l.birim)}</td>${hucre('nakit')}${hucre('kk')}${hucre('cek')}</tr>`;
+        return `<tr><td><span class="poz-chip">${escapeHtml(kart.kod||'')}</span></td><td>${escapeHtml(l.tanim)}</td>
+          <td style="text-align:right;color:var(--muted);font-size:11px;">${mhFmt(kalan)} ${escapeHtml(l.birim)}</td>
+          <td><input type="text" inputmode="decimal" title="Bu firmaya sipariş edilecek miktar (kalan: ${mhFmt(kalan)})" value="${escapeHtml(String(siparisMiktari))}" oninput="mhTeklifMiktarYaz('${t.id}','${k.id}','${l.id}', this.value)" onchange="saveMh()" style="width:80px;text-align:right;"></td>
+          ${hucre('nakit')}${hucre('kk')}${hucre('cek')}</tr>`;
       }).join('');
       const topHucre = (tip)=>`<td style="text-align:right;" id="mhTop_${k.id}_${tip}">${mhTopMetni(mhTeklifToplamHesapla(t,k,tip))}</td>`;
       const kazanBtn = (tip,etiket)=>`<button class="btn btn-publish btn-sm" onclick="mhSiparisOlusturYeni('${t.id}','${k.id}','${tip}')">✔ ${etiket} ile Sipariş Ver</button>`;
@@ -7971,9 +7998,9 @@ function mhRenderTeklif(){
         </div>
         <div class="table-wrap" style="box-shadow:none;border:1px solid var(--border);">
           <table>
-            <thead><tr><th>Kod</th><th>Tanım</th><th style="text-align:right;">Miktar</th><th>Nakit</th><th>KK Taksitli</th><th>Çek</th></tr></thead>
+            <thead><tr><th>Kod</th><th>Tanım</th><th style="text-align:right;">Kalan</th><th style="text-align:right;">Bu Firmaya Miktar</th><th>Nakit</th><th>KK Taksitli</th><th>Çek</th></tr></thead>
             <tbody>${satirRows}</tbody>
-            <tfoot><tr style="font-weight:700;"><td colspan="3" style="text-align:right;">Toplam (KDV hariç)</td>${topHucre('nakit')}${topHucre('kk')}${topHucre('cek')}</tr></tfoot>
+            <tfoot><tr style="font-weight:700;"><td colspan="4" style="text-align:right;">Toplam (KDV hariç)</td>${topHucre('nakit')}${topHucre('kk')}${topHucre('cek')}</tr></tfoot>
           </table>
         </div>
         <div class="field" style="margin:10px 0;"><label>Açıklama <small style="color:var(--muted);">(örn. taksit/çek koşulları, nakliye)</small></label>
@@ -8320,7 +8347,7 @@ function mhSevkOnayla(id){
 function mhSevkReddet(id){
   const s = state.mh.sevkler.find(x=>x.id===id); if(!s || s.durum!=='Onay Bekliyor') return;
   const t = s.talepId ? state.mh.talepler.find(x=>x.id===s.talepId) : null;
-  if(t && t.siparisId){ showToast('Bu talep için sipariş oluşturulmuş, sevk reddedilemez.'); return; }
+  if(t && mhTalepSiparisVarMi(t)){ showToast('Bu talep için sipariş oluşturulmuş, sevk reddedilemez.'); return; }
   if(!confirm(`"${s.no}" sevk isteği reddedilsin mi?${t ? ' Karşılanacak miktar için talep siparişe döner.' : ''}`)) return;
   s.durum = 'Reddedildi'; saveMh(); render();
 }
