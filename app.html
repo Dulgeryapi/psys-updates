@@ -7868,7 +7868,7 @@ function mhRenderTalepler(){
       </td></tr>` : '';
     return `<tr>
       <td><span class="poz-chip">${t.no}</span></td>
-      <td style="white-space:nowrap;color:var(--muted);font-size:12px;">${t.tarih}</td>
+      <td style="white-space:nowrap;color:var(--muted);font-size:12px;">${tarihNoktali(t.tarih)}</td>
       <td>${escapeHtml(mhYerAd(t.yerId))}</td>
       <td>${t.satirlar.length} satır <span style="color:var(--muted);font-size:11.5px;">(${t.satirlar.filter(l=>l.tur==='Malzeme').length} malzeme, ${t.satirlar.filter(l=>l.tur==='Hizmet').length} hizmet)</span></td>
       <td>${mhTalepDurumu(t)}</td>
@@ -8155,7 +8155,7 @@ function mhRenderTeklif(){
   const sipRows = state.mh.siparisler.length ? state.mh.siparisler.slice().reverse().map(s=>{
     const tp = mhSiparisToplam(s);
     return `<tr>
-      <td><span class="poz-chip">${s.no}</span></td><td style="white-space:nowrap;color:var(--muted);font-size:12px;">${s.tarih}</td>
+      <td><span class="poz-chip">${s.no}</span></td><td style="white-space:nowrap;color:var(--muted);font-size:12px;">${tarihNoktali(s.tarih)}</td>
       <td>${s.talepNo}</td><td>${escapeHtml(s.firma)}${s.firmaLink?` <a href="${escapeHtml(s.firmaLink)}" target="_blank" title="Ürün linki">🔗</a>`:''}</td><td>${escapeHtml(s.odemeSekli||'—')}</td><td>${escapeHtml(mhYerAd(s.teslimYeriId))}</td>
       <td style="text-align:right;">${paraTR(tp.ara)}</td><td style="text-align:right;">${s.kdvOrani}</td><td style="text-align:right;font-weight:600;">${paraTR(tp.genel)}</td>
       <td style="white-space:nowrap;">
@@ -8508,7 +8508,7 @@ function mhRenderSevk(){
     let islem = '';
     if(v.durum==='Onay Bekliyor') islem = `<button class="btn btn-publish btn-sm" onclick="mhSevkOnayla('${v.id}')">Onayla / Sevk Et</button> <button class="btn btn-ghost btn-sm" onclick="mhSevkReddet('${v.id}')">Reddet</button>`;
     else if(v.durum==='Yolda') islem = `<button class="btn btn-publish btn-sm" onclick="mhSevkTeslim('${v.id}')">Teslim Aldım</button> <button class="btn btn-ghost btn-sm" onclick="mhSevkGeriAl('${v.id}')">Geri Al</button>`;
-    return `<tr><td><span class="poz-chip">${v.no}</span></td><td style="white-space:nowrap;color:var(--muted);font-size:12px;">${v.tarih}</td>
+    return `<tr><td><span class="poz-chip">${v.no}</span></td><td style="white-space:nowrap;color:var(--muted);font-size:12px;">${tarihNoktali(v.tarih)}</td>
       <td>${escapeHtml(k.kod||'')} — ${escapeHtml(k.tanim||'')}</td><td style="text-align:right;">${mhFmt(v.miktar)} ${escapeHtml(k.birim||'')}</td>
       <td>${escapeHtml(mhYerAd(v.hedefYerId))}</td><td>${v.talepNo||'Elle'}</td><td>${v.durum}</td><td>${islem}</td></tr>`;
   }).join('') : `<tr><td colspan="8"><div class="mg-empty">Henüz sevk kaydı yok.</div></td></tr>`;
@@ -8546,7 +8546,7 @@ function mhRenderHareket(){
   const toplamSatir = liste.length;
   liste = liste.slice(0,300);
   const rows = liste.map(h=>{ const k = mhKartGetir(h.kartId)||{}; return `<tr>
-    <td style="white-space:nowrap;color:var(--muted);font-size:12px;">${h.tarih}</td><td>${h.tip}</td>
+    <td style="white-space:nowrap;color:var(--muted);font-size:12px;">${tarihNoktali(h.tarih)}</td><td>${h.tip}</td>
     <td>${escapeHtml(k.kod||'')} — ${escapeHtml(k.tanim||'')}</td><td>${escapeHtml(mhYerAd(h.yerId))}</td>
     <td style="text-align:right;color:#1f7a4d;">${h.yon>0?mhFmt(h.miktar):''}</td><td style="text-align:right;color:#b3261e;">${h.yon<0?mhFmt(h.miktar):''}</td>
     <td style="text-align:right;">${paraTR(h.birimFiyat)}</td><td>${escapeHtml(h.belge)}</td><td>${escapeHtml([h.kim,h.not].filter(Boolean).join(' · '))}</td></tr>`; }).join('');
@@ -8909,7 +8909,7 @@ function izinOnayTekrarGonder(id){
 }
 function izinMuhasebeMetni(i, p){
   const konu = `İzin Onayı — ${p.ad} (${i.no})`;
-  const govde = `${p.ad} (${departmanAd(p.departmanId)}) için izin talebi onaylanmıştır.\n\nBaşlangıç: ${i.baslangic}\nBitiş: ${i.bitis}\nGün Sayısı: ${i.gunSayisi}\nİzin Türü: ${i.tur}\nSebep: ${i.sebep||'—'}`;
+  const govde = `${p.ad} (${departmanAd(p.departmanId)}) için izin talebi onaylanmıştır.\n\nBaşlangıç: ${tarihNoktali(i.baslangic)}\nBitiş: ${tarihNoktali(i.bitis)}\nGün Sayısı: ${i.gunSayisi}\nİzin Türü: ${i.tur}\nSebep: ${i.sebep||'—'}`;
   return { konu, govde };
 }
 function izinMuhasebeMailLinki(i, p){
@@ -8938,7 +8938,7 @@ function izinReddet(id){
   const p = state.personeller.find(x=>x.id===i.personelId);
   if(p && p.email){
     const konu = `İzin Talebiniz Reddedildi — ${i.no}`;
-    const govde = `Sayın ${p.ad},\n\n${i.baslangic} - ${i.bitis} tarihleri arasındaki izin talebiniz reddedilmiştir.\n\nAçıklama: ${i.redAciklamasi}`;
+    const govde = `Sayın ${p.ad},\n\n${tarihNoktali(i.baslangic)} - ${tarihNoktali(i.bitis)} tarihleri arasındaki izin talebiniz reddedilmiştir.\n\nAçıklama: ${i.redAciklamasi}`;
     izinMailGonder(p.email, konu, govde, `mailto:${p.email}?subject=${encodeURIComponent(konu)}&body=${encodeURIComponent(govde)}`);
     showToast('İzin reddedildi, personele bildirim maili gönderildi.');
   } else if(p && !p.email){
@@ -9142,7 +9142,7 @@ function renderOnayGirisiTab(){
     </div>`;
   }
   const bekleyen = onayGirisiBekleyenListesi();
-  const rows = bekleyen.length ? bekleyen.map(i=>`<tr><td>${escapeHtml(i.ad)}</td><td>${i.baslangic}</td><td>${i.bitis}</td><td style="text-align:right;">${i.gunSayisi}</td><td>${escapeHtml(i.sebep)||'—'}</td>
+  const rows = bekleyen.length ? bekleyen.map(i=>`<tr><td>${escapeHtml(i.ad)}</td><td>${tarihNoktali(i.baslangic)}</td><td>${tarihNoktali(i.bitis)}</td><td style="text-align:right;">${i.gunSayisi}</td><td>${escapeHtml(i.sebep)||'—'}</td>
     <td style="white-space:nowrap;"><button class="icon-btn" onclick="izinOnayla('${i.id}')" title="Onayla">✓ Onayla</button><button class="icon-btn" style="color:var(--danger);" onclick="izinReddet('${i.id}')" title="Reddet">🚫 Reddet</button><button class="icon-btn" onclick="izinOnayTekrarGonder('${i.id}')" title="Bildirim mailini tekrar gönder">🔁 Mail</button></td></tr>`).join('')
     : `<tr><td colspan="6"><div class="mg-empty">Onay bekleyen izin yok.</div></td></tr>`;
   return `
@@ -9260,7 +9260,7 @@ function renderPersonelKarti(p){
         <td>${i.durum}</td>
         <td style="white-space:nowrap;"><button class="icon-btn" onclick="saveEditIzin('${i.id}')" title="Kaydet">✓</button><button class="icon-btn" onclick="cancelEditIzin()" title="Vazgeç">✕</button></td></tr>`;
     }
-    return `<tr><td>${i.baslangic}</td><td>${i.bitis}</td><td style="text-align:right;">${i.gunSayisi}</td><td>${escapeHtml(i.sebep)||'—'}${i.iptalSebebi ? `<br><small style="color:var(--danger);">İptal (${i.iptalTarihi}): ${escapeHtml(i.iptalSebebi)}</small>` : ''}</td>
+    return `<tr><td>${tarihNoktali(i.baslangic)}</td><td>${tarihNoktali(i.bitis)}</td><td style="text-align:right;">${i.gunSayisi}</td><td>${escapeHtml(i.sebep)||'—'}${i.iptalSebebi ? `<br><small style="color:var(--danger);">İptal (${tarihNoktali(i.iptalTarihi)}): ${escapeHtml(i.iptalSebebi)}</small>` : ''}</td>
     <td style="${durumRenk(i.durum)}">${i.durum}${i.durum==='Onaylandı' ? (i.donusOnaylandi ? ' · Dönüş ✓' : ' · Dönüş bekliyor') : ''}</td>
     <td style="white-space:nowrap;">${i.durum==='Beklemede' ? `<button class="icon-btn" onclick="startEditIzin('${i.id}')" title="Düzelt">✎</button><button class="icon-btn" onclick="izinOnayTekrarGonder('${i.id}')" title="Bildirim mailini tekrar gönder">🔁 Mail</button>` : ''}${(i.durum==='Onaylandı' && !i.donusOnaylandi) ? `<input type="time" id="izinDonusSaat_${i.id}" value="08:00" style="width:80px;font-size:11px;padding:2px 4px;"><button class="icon-btn" onclick="izinDonusOnayla('${i.id}')" title="Dönüşü Onayla">🔁</button>` : ''}${i.durum==='Onaylandı' ? `<button class="icon-btn del-btn" onclick="izinIptalEt('${i.id}')" title="Onaylı izni iptal et (sebep sorulur, bakiye geri yüklenir)">↩ İptal Et</button>` : ''}<button class="icon-btn" onclick="izinYazdir('${i.id}')" title="Yazdır">🖨</button><button class="icon-btn del-btn" onclick="izinSil('${i.id}')" title="Kalıcı Sil">🗑</button></td></tr>`;
   }).join('')
