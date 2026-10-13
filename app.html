@@ -4529,6 +4529,18 @@ function renderTalepTab(){
 
 /* ---------- render: satınalma / keşif tab ---------- */
 function toggleSatinalmaSecili(key, checked){ state.satinalmaSecili[key] = checked; render(); }
+function exportBekleyenFiyatExcel(){
+  const bekleyenler = pendingSatirlar();
+  if(!bekleyenler.length){ showToast('Fiyat bekleyen satır yok.'); return; }
+  const data = bekleyenler.map(s=>({
+    'Proje': s.projeAdi, 'Talep No': s.talepNo, 'Poz No': s.pozNo||'—', 'Poz / Malzeme Tanımı': s.pozTanimi||s.tanim, 'Birim': s.birim, 'Miktar': s.miktar, 'Birim Fiyat (KDV Hariç)': ''
+  }));
+  const ws = XLSX.utils.json_to_sheet(data);
+  ws['!cols'] = [{wch:16},{wch:12},{wch:14},{wch:36},{wch:8},{wch:10},{wch:18}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Fiyat Bekleyenler');
+  XLSX.writeFile(wb, 'Fiyat_Bekleyen_Tum_Projeler.xlsx');
+}
 function toggleTumFiyatGirisiSecili(checked){
   pendingSatirlar().forEach(s=>{ state.satinalmaSecili[fiyatKey(s.talepId, s.id)] = checked; });
   render();
@@ -4865,7 +4877,10 @@ function renderSatinalmaTab(){
     <div class="card">
       <h2><span class="num">1</span>Fiyat Girişi <small>${bekleyenler.length} kalem bekliyor</small></h2>
       <div class="disabled-hint" style="margin-bottom:10px;">"Fiyatı Onayla" bu kalemi Keşif Tablosu'na taşır. Gerçek Sözleşme No, aşağıda Teyit Formu oluşturup "Sözleşmeye Dönüştür" dediğinizde oluşur.</div>
-      ${bekleyenler.length ? `<label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;margin-bottom:10px;"><input type="checkbox" ${bekleyenler.length && bekleyenler.every(s=>state.satinalmaSecili[fiyatKey(s.talepId,s.id)])?'checked':''} onchange="toggleTumFiyatGirisiSecili(this.checked)"> Hepsini Seç (tüm talepler)</label>` : ''}
+      ${bekleyenler.length ? `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;"><input type="checkbox" ${bekleyenler.length && bekleyenler.every(s=>state.satinalmaSecili[fiyatKey(s.talepId,s.id)])?'checked':''} onchange="toggleTumFiyatGirisiSecili(this.checked)"> Hepsini Seç (tüm talepler)</label>
+        <button class="btn btn-ghost btn-sm" onclick="exportBekleyenFiyatExcel()">⬇ Tüm Projelerden Excel'e Aktar</button>
+      </div>` : ''}
       ${grupBloklari}
       <div class="actions" style="margin-top:0;">
         <button class="btn btn-ghost" ${secilenSayisi?'':'disabled'} onclick="bulkConvertToSozlesme()">✓ İşaretlenenleri (${secilenSayisi}) Tek Seferde Onayla</button>
