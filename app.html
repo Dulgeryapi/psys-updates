@@ -8738,7 +8738,7 @@ async function izinMailGonder(email, konu, govde, mailtoYedek){
 }
 function izinBildirimMetni(personel, izin, aciklama){
   const konu = `İzin Onayı Bekliyor — ${personel.ad} (${izin.no})`;
-  const govde = `${aciklama}\n\nPersonel: ${personel.ad} (${departmanAd(personel.departmanId)})\nBaşlangıç: ${izin.baslangic}\nBitiş: ${izin.bitis}\nGün Sayısı: ${izin.gunSayisi}\nİzin Türü: ${izin.tur}\nSebep: ${izin.sebep||'—'}`;
+  const govde = `${aciklama}\n\nPersonel: ${personel.ad} (${departmanAd(personel.departmanId)})\nBaşlangıç: ${izin.baslangic}\nBitiş: ${izin.bitis}\nKullanılan Gün (Bu Talep): ${izin.gunSayisi}\nYıllık İzin Hakkı: ${personel.toplamIzin||0} gün\nKalan İzin (Bu Talep Hariç): ${personelKalanIzin(personel)} gün\nİzin Türü: ${izin.tur}\nSebep: ${izin.sebep||'—'}`;
   return { konu, govde };
 }
 function izinOnayBildirimMailLinki(email, personel, izin, aciklama){
