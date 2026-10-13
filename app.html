@@ -6654,13 +6654,15 @@ function renderRaporlarTab(){
     {id:'talepler', label:'Talepler'},
     {id:'kesifler', label:'Keşifler'},
     {id:'sozlesmeler', label:'Sözleşmeler'},
-    {id:'hakedisler', label:'Hakedişler'}
+    {id:'hakedisler', label:'Hakedişler'},
+    {id:'onayliKesif', label:'Onaylı Keşif (Bütçe için)'}
   ];
   const nav = altTablar.map(t => `<button class="tab-btn ${state.raporAltTab===t.id?'active':''}" onclick="onFieldRender('raporAltTab','${t.id}')">${t.label}</button>`).join('');
   let icerik = '';
   if(state.raporAltTab==='talepler') icerik = renderTalepRaporu();
   else if(state.raporAltTab==='kesifler') icerik = renderKesifRaporu();
   else if(state.raporAltTab==='sozlesmeler') icerik = renderSozlesmelerTab();
+  else if(state.raporAltTab==='onayliKesif') icerik = renderOnayliKesifRaporu();
   else icerik = renderHakedisListeTab();
   return `
     <div class="page-head">
@@ -6670,6 +6672,54 @@ function renderRaporlarTab(){
     <div class="tabs" style="margin-bottom:16px;">${nav}</div>
     ${icerik}
   `;
+}
+function onayliKesifSatirlari(){
+  const satirlar = [];
+  state.teyitler.filter(t=>t.sozlesmeNo).forEach(t=>{
+    (t.kalemler||[]).forEach(k=>{
+      satirlar.push({ talepNo: t.talepNo, tarih: t.tarih, proje: t.projeAdi, pozMalzeme: k.pozTanimi, pozNo: k.pozNo, birim: k.birim,
+        miktar: k.miktar, birimFiyat: k.birimFiyat, tutar: k.tutar, kaynak: 'Mühendislik Talebi (Sözleşme)' });
+    });
+  });
+  (state.mh.siparisler||[]).filter(s=>!s.iptal).forEach(s=>{
+    s.satirlar.forEach(l=>{
+      satirlar.push({ talepNo: s.talepNo, tarih: s.tarih, proje: mhYerAd(s.teslimYeriId), pozMalzeme: l.tanim, pozNo: '', birim: l.birim,
+        miktar: l.miktar, birimFiyat: l.birimFiyat, tutar: l.miktar*l.birimFiyat, kaynak: 'Malzeme Talebi (Sipariş)' });
+    });
+  });
+  return satirlar;
+}
+function renderOnayliKesifRaporu(){
+  const satirlar = onayliKesifSatirlari();
+  const rows = satirlar.length ? satirlar.map(r=>`<tr>
+    <td><span class="poz-chip">${escapeHtml(r.talepNo)}</span></td><td style="white-space:nowrap;color:var(--muted);font-size:12px;">${tarihNoktali(r.tarih)}</td>
+    <td>${escapeHtml(r.proje)}</td><td class="tanim-cell">${escapeHtml(r.pozMalzeme)}</td><td>${escapeHtml(r.birim)}</td>
+    <td style="text-align:right;">${mhFmt(r.miktar)}</td><td style="text-align:right;">${paraTR(r.birimFiyat)}</td><td style="text-align:right;font-weight:600;">${paraTR(r.tutar)}</td>
+    <td style="font-size:11px;color:var(--muted);">${r.kaynak}</td></tr>`).join('') : `<tr><td colspan="9"><div class="mg-empty">Henüz sözleşmeye/siparişe dönüşmüş kalem yok.</div></td></tr>`;
+  return `
+    <div class="card">
+      <div class="list-toolbar">
+        <div class="disabled-hint" style="margin:0;">Sözleşmeye dönüşmüş Mühendislik Talebi kalemleri ile siparişe dönüşmüş Malzeme Talebi kalemlerini birlikte listeler — bütçe yenilemede güncel fiyat/miktar referansı olarak kullanabilirsiniz.</div>
+        <button class="btn btn-ghost" onclick="exportOnayliKesifExcel()">⬇ Excel'e Aktar</button>
+      </div>
+      <div class="table-wrap" style="box-shadow:none;border:1px solid var(--border);margin-top:10px;">
+        <table><thead><tr><th>Talep No</th><th>Tarih</th><th>Proje</th><th>Poz / Malzeme</th><th>Birim</th><th style="text-align:right;">Miktar</th><th style="text-align:right;">Birim Fiyat</th><th style="text-align:right;">Tutar</th><th>Kaynak</th></tr></thead>
+        <tbody>${rows}</tbody></table>
+      </div>
+    </div>`;
+}
+function exportOnayliKesifExcel(){
+  const satirlar = onayliKesifSatirlari();
+  if(!satirlar.length){ showToast('Aktarılacak kayıt yok.'); return; }
+  const data = satirlar.map(r=>({
+    'Talep No': r.talepNo, 'Tarih': r.tarih, 'Proje': r.proje, 'Poz No': r.pozNo, 'Poz / Malzeme': r.pozMalzeme,
+    'Birim': r.birim, 'Miktar': r.miktar, 'Birim Fiyat': r.birimFiyat, 'Tutar': r.tutar, 'Kaynak Türü': r.kaynak
+  }));
+  const ws = XLSX.utils.json_to_sheet(data);
+  ws['!cols'] = [{wch:14},{wch:18},{wch:18},{wch:14},{wch:34},{wch:8},{wch:10},{wch:12},{wch:14},{wch:26}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Onaylı Keşif');
+  XLSX.writeFile(wb, 'Onayli_Kesif_Butce_Icin.xlsx');
 }
 function renderTalepRaporu(){
   const q = state.raporTalepArama.trim().toLocaleLowerCase('tr-TR');
