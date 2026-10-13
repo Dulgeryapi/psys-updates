@@ -569,7 +569,7 @@ const state = {
   editPozIdx: null, editPozDraft: { pozTanimi:'', birim:'', tur:'' },
   personeller: [], izinKayitlari: [],
   newPersonelAd:'', newPersonelSirketKodu:'', newPersonelDepartmanId:'', newPersonelTitle:'', newPersonelYoneticiId:'', newPersonelToplamIzin:'14', newPersonelEmail:'',
-  personelAcikId: '', editPersonelId: null, editPersonelDraft: {}, personelDepartmanFiltre: '', personelOrgAcik: false,
+  personelAcikId: '', editPersonelId: null, editPersonelDraft: {}, personelDepartmanFiltre: '', personelOrgAcik: false, personelGorunum: 'kart',
   izinF: { personelId:'', baslangic:'', bitis:'', sebep:'', tur:'Yıllık İzin', adres:'', telefon:'', baslangicSaat:'08:00', bitisSaat:'08:00', vekaletEdenId:'' },
   editIzinId: '', editIzinDraft: {},
   issozSablonOzel: null, issozSablonAd: '', muhasebeEmail: '',
@@ -8772,6 +8772,22 @@ function addPersonel(){
   savePersoneller(); render();
   showToast('Personel eklendi:', ad);
 }
+function personelExcelAktar(){
+  if(!state.personeller.length){ showToast('Aktarılacak personel kaydı yok.'); return; }
+  const rows = state.personeller.map(p=>{
+    const yonetici = p.yoneticiId ? state.personeller.find(x=>x.id===p.yoneticiId) : null;
+    return {
+      'Ad Soyad': p.ad, 'Unvan': p.title||'', 'Şirket Kodu': p.sirketKodu, 'Departman': departmanAd(p.departmanId),
+      'Bağlı Olduğu Yönetici': yonetici?yonetici.ad:'', 'Yıllık İzin Hakkı': p.toplamIzin||0,
+      'Kullanılan İzin': personelKullanilanIzin(p.id), 'Kalan İzin': personelKalanIzin(p), 'E-posta': p.email||''
+    };
+  });
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws['!cols'] = [{wch:22},{wch:20},{wch:10},{wch:18},{wch:22},{wch:14},{wch:14},{wch:12},{wch:28}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Personel');
+  XLSX.writeFile(wb, 'Personel_Listesi.xlsx');
+}
 function personelAc(id){ state.personelAcikId = (state.personelAcikId===id) ? '' : id; render(); }
 function startEditPersonel(id){
   const p = state.personeller.find(x=>x.id===id); if(!p) return;
@@ -9172,7 +9188,19 @@ function renderPersonelTab(){
         <span>${escapeHtml(d.ad)} departmanı</span><span class="personel-dep-sayi">${sayi}</span>
       </div>`).join('')}
     </div>`;
-  const kartlar = gosterilecekler.length ? `<div class="home-grid">${gosterilecekler.map(p=>renderPersonelOzetKarti(p)).join('')}</div>` : `<div class="mg-empty">${depFiltre ? 'Bu departmanda kayıt yok.' : 'Henüz personel kaydı yok.'}</div>`;
+  const liste1 = state.personelGorunum==='liste';
+  const kartlar = !gosterilecekler.length ? `<div class="mg-empty">${depFiltre ? 'Bu departmanda kayıt yok.' : 'Henüz personel kaydı yok.'}</div>`
+    : liste1 ? `
+    <div class="table-wrap" style="box-shadow:none;border:1px solid var(--border);">
+      <table><thead><tr><th>Ad Soyad</th><th>Unvan</th><th>Departman</th><th>Şirket</th><th>Yönetici</th><th style="text-align:right;">İzin Hakkı</th><th style="text-align:right;">Kullanılan</th><th style="text-align:right;">Kalan</th><th>E-posta</th></tr></thead>
+      <tbody>${gosterilecekler.map(p=>{
+        const yonetici = p.yoneticiId ? state.personeller.find(x=>x.id===p.yoneticiId) : null;
+        return `<tr style="cursor:pointer;" onclick="personelAc('${p.id}')">
+          <td>${escapeHtml(p.ad)}</td><td>${escapeHtml(p.title)||'—'}</td><td>${escapeHtml(departmanAd(p.departmanId))}</td><td>${escapeHtml(p.sirketKodu)}</td>
+          <td>${yonetici?escapeHtml(yonetici.ad):'—'}</td><td style="text-align:right;">${p.toplamIzin||0}</td><td style="text-align:right;">${personelKullanilanIzin(p.id)}</td><td style="text-align:right;font-weight:600;">${personelKalanIzin(p)}</td>
+          <td>${escapeHtml(p.email)||'—'}</td></tr>`;
+      }).join('')}</tbody></table>
+    </div>` : `<div class="home-grid">${gosterilecekler.map(p=>renderPersonelOzetKarti(p)).join('')}</div>`;
   const acikPersonel = state.personelAcikId ? state.personeller.find(p=>p.id===state.personelAcikId) : null;
   const detayHtml = acikPersonel ? renderPersonelKarti(acikPersonel) : '';
   const sirketOpts = state.sirketler.map(s=>`<option value="${s.kodu}" ${state.newPersonelSirketKodu===s.kodu?'selected':''}>${s.kodu} — ${escapeHtml(s.ad)}</option>`).join('');
@@ -9206,8 +9234,13 @@ function renderPersonelTab(){
       <div class="actions"><button class="btn btn-publish" onclick="addPersonel()">+ Personel Ekle</button></div>
     </div>
     <div class="card">
-      <h2><span class="num">2</span>Personel Listesi <small>${gosterilecekler.length} / ${state.personeller.length} kayıt — karta tıklayın</small>
-        <button class="btn btn-ghost btn-sm" style="float:right;" onclick="personelOrgSemasiAc()">🧑‍💼 Organizasyon Şeması</button>
+      <h2><span class="num">2</span>Personel Listesi <small>${gosterilecekler.length} / ${state.personeller.length} kayıt — ${liste1?'satıra':'karta'} tıklayın</small>
+        <div style="float:right;display:flex;gap:6px;">
+          <button class="btn btn-ghost btn-sm" onclick="onFieldRender('personelGorunum','kart')" style="${!liste1?'background:var(--primary-tint);color:var(--primary);':''}">🔲 Kart</button>
+          <button class="btn btn-ghost btn-sm" onclick="onFieldRender('personelGorunum','liste')" style="${liste1?'background:var(--primary-tint);color:var(--primary);':''}">☰ Liste</button>
+          <button class="btn btn-ghost btn-sm" onclick="personelExcelAktar()">⬇ Excel'e Aktar</button>
+          <button class="btn btn-ghost btn-sm" onclick="personelOrgSemasiAc()">🧑‍💼 Organizasyon Şeması</button>
+        </div>
       </h2>
       <div style="display:flex;gap:18px;align-items:flex-start;">
         ${depListesi}
