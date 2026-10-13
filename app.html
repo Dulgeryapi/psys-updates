@@ -588,7 +588,7 @@ const state = {
   talepSeciliPozNo: '',
   newTalepProjeKodu: '',
   newTalepEden: '',
-  newTalepAciklama: '',
+  newTalepAciklama: '', newTalepOngorulenButce: '',
   talepMiktar: '',
   talepNot: '',
   kesifProjeFiltre: '',
@@ -1258,6 +1258,8 @@ function nextSiparisNo(projeAdi){
 function startNewTalep(){
   const proje = getProjeObj(state.newTalepProjeKodu);
   if(!proje){ showToast('Lütfen bir proje seçin.'); return; }
+  const ongorulenButce = mhSayi(state.newTalepOngorulenButce);
+  if(!(ongorulenButce > 0)){ showToast('Lütfen öngörülen bütçe giriniz.'); return; }
   const header = {
     id: uid('TLP'),
     talepNo: nextTalepNo(),
@@ -1266,12 +1268,13 @@ function startNewTalep(){
     sirketKodu: proje.sirketKodu, sirketAd: proje.sirketAd,
     talepEden: state.newTalepEden.trim(),
     aciklama: state.newTalepAciklama.trim(),
+    ongorulenButce,
     tarih: new Date().toLocaleString('tr-TR'),
     satirlar: []
   };
   state.talepler.push(header);
   state.aktifTalepId = header.id;
-  state.newTalepProjeKodu=''; state.newTalepEden=''; state.newTalepAciklama='';
+  state.newTalepProjeKodu=''; state.newTalepEden=''; state.newTalepAciklama=''; state.newTalepOngorulenButce='';
   saveTalepler();
   showToast('Talep oluşturuldu:', header.talepNo);
   render();
@@ -1348,7 +1351,7 @@ function addMalzemeTalebiSatir(){
   let mhTalep = state.mh.talepler.find(t=>!t.iptal && !t.siparisId && t.yerId===yerId && t.uretimdenGeldi && t.uretimTalepNo===header.talepNo);
   if(!mhTalep){
     mhTalep = { id: uid('MHT'), no: mhNo('talep'), tarih: mhBugun(), yerId, projeKodu: header.projeKodu, notu: '',
-      iptal:false, siparisId:'', teklifler:[], satirlar:[], uretimdenGeldi:true, uretimTalepNo: header.talepNo };
+      iptal:false, siparisId:'', teklifler:[], satirlar:[], uretimdenGeldi:true, uretimTalepNo: header.talepNo, ongorulenButce: header.ongorulenButce||0 };
     state.mh.talepler.push(mhTalep);
   }
   const kart = mhKartBul('Malzeme', ad, birim) || mhKartOlustur('Malzeme', ad, birim);
@@ -2680,7 +2683,10 @@ function olusturTeyitFormu(){
   const toplam = items.reduce((s,t)=>s+t.tutar,0);
   const talepNolar = [...new Set(items.map(t=>t.talepNo))].join(', ');
   const siparisNolar = [...new Set(items.map(t=>t.siparisNo))].join(', ');
+  const ilgiliTalepIdlerKayit = [...new Set(items.map(t=>t.talepId))];
+  const ongorulenButceKayit = ilgiliTalepIdlerKayit.reduce((s,tid)=>{ const h=state.talepler.find(x=>x.id===tid); return s + (h&&h.ongorulenButce ? h.ongorulenButce : 0); }, 0);
   const record = {
+    ongorulenButce: ongorulenButceKayit,
     id: uid('TEY'), teyitNo: nextTeyitNo(), tarih: new Date().toLocaleString('tr-TR'),
     projeKodu: state.teyitProjeFiltre, projeAdi: projeObj ? projeObj.ad : '',
     sirketKodu: projeObj ? projeObj.sirketKodu : '', sirketAd: projeObj ? projeObj.sirketAd : '',
@@ -3482,6 +3488,8 @@ function printTeyitFormu(id){
         <tr><th>Proje Adı</th><th>Poz No</th><th>Poz Tanımı</th><th>Birim</th><th>Miktar</th><th>Birim Fiyat</th><th>Tutar</th></tr>
         ${rows}
         <tr><td colspan="6" style="text-align:right;font-weight:700;">TOPLAM</td><td style="text-align:right;font-weight:700;">${paraTR(t.toplam)} TL</td></tr>
+        ${t.ongorulenButce ? `<tr><td colspan="6" style="text-align:right;color:var(--muted);">Öngörülen Bütçe</td><td style="text-align:right;color:var(--muted);">${paraTR(t.ongorulenButce)} TL</td></tr>
+        <tr><td colspan="6" style="text-align:right;color:${t.toplam>t.ongorulenButce?'var(--danger)':'var(--accent-dark)'};">Fark (Öngörülen − Gerçekleşen)</td><td style="text-align:right;color:${t.toplam>t.ongorulenButce?'var(--danger)':'var(--accent-dark)'};">${paraTR(t.ongorulenButce-t.toplam)} TL</td></tr>` : ''}
       </table>
       ${notlarBlok('İş Programı', t.notlarIsProgrami||[])}
       ${notlarBlok('Hakediş Ödemeleri', t.notlarHakedisOdemeleri||[])}
@@ -4364,6 +4372,10 @@ function renderTalepTab(){
             <input type="text" value="${escapeHtml(state.newTalepEden)}" oninput="onField('newTalepEden', this.value)">
           </div>
           <div class="field">
+            <label>Öngörülen Bütçe (TL) *</label>
+            <input type="text" inputmode="decimal" placeholder="Bu talebin tamamı için tahmini toplam tutar" value="${escapeHtml(state.newTalepOngorulenButce)}" oninput="onField('newTalepOngorulenButce', this.value)">
+          </div>
+          <div class="field">
             <label>Genel Açıklama (opsiyonel)</label>
             <textarea oninput="onField('newTalepAciklama', this.value)">${escapeHtml(state.newTalepAciklama)}</textarea>
           </div>
@@ -4920,6 +4932,14 @@ function renderTeyitFormuKarti(){
   const secilenTalepNolar = [...new Set(secilenKalemler.map(t=>t.talepNo))].join(', ');
   const secilenSiparisNolar = [...new Set(secilenKalemler.map(t=>t.siparisNo))].join(', ');
   const canCreate = state.teyitProjeFiltre && state.teyitUstaId && secilenTutar>0;
+  const ilgiliTalepIdler = [...new Set(secilenKalemler.map(t=>t.talepId))];
+  const ongorulenButceToplam = ilgiliTalepIdler.reduce((s,tid)=>{ const h=state.talepler.find(x=>x.id===tid); return s + (h&&h.ongorulenButce ? h.ongorulenButce : 0); }, 0);
+  const butceFarkHtml = (secilenKalemler.length && ongorulenButceToplam>0) ? `
+    <div class="disabled-hint" style="margin:8px 0;display:flex;gap:18px;flex-wrap:wrap;">
+      <span>Öngörülen Bütçe: <b>${paraTR(ongorulenButceToplam)}</b></span>
+      <span>Gerçekleşen (bu seçim): <b>${paraTR(secilenTutar)}</b></span>
+      <span style="color:${secilenTutar>ongorulenButceToplam?'var(--danger)':'var(--accent-dark)'};">Fark: <b>${paraTR(ongorulenButceToplam-secilenTutar)}</b></span>
+    </div>` : '';
 
   const gecmisRows = state.teyitler.length ? state.teyitler.slice().reverse().map(t => `
     <tr>
@@ -5005,6 +5025,7 @@ function renderTeyitFormuKarti(){
       </div>
 
       <div class="actions">
+        ${butceFarkHtml}
         <button class="btn btn-publish" ${canCreate?'':'disabled'} onclick="olusturTeyitFormu()">🖨 Teyit Formu Oluştur ve Yazdır</button>
         <span class="req-note">${secilenTutar>0 ? 'Seçilen tutar: <b class="poz-preview-code">'+paraTR(secilenTutar)+' TL</b>' : 'Proje, usta ve en az bir kalem seçin.'}</span>
       </div>
@@ -8208,7 +8229,13 @@ function mhRenderTeklif(){
         <div class="actions">${kazanBtn('nakit','Nakit')} ${kazanBtn('kk','KK Taksitli')} ${kazanBtn('cek','Çek')}</div>
       </div>`;
     }).join('');
+    const gerceklesenToplam = state.mh.siparisler.filter(s=>!s.iptal && s.talepId===t.id).reduce((a,s)=>a+s.satirlar.reduce((x,l)=>x+l.miktar*l.birimFiyat,0),0);
     panel = `
+      ${t.ongorulenButce ? `<div class="disabled-hint" style="margin:10px 0;display:flex;gap:18px;flex-wrap:wrap;">
+        <span>Öngörülen Bütçe: <b>${paraTR(t.ongorulenButce)}</b></span>
+        <span>Şu ana kadar gerçekleşen: <b>${paraTR(gerceklesenToplam)}</b></span>
+        <span style="color:${gerceklesenToplam>t.ongorulenButce?'var(--danger)':'var(--accent-dark)'};">Kalan: <b>${paraTR(t.ongorulenButce-gerceklesenToplam)}</b></span>
+      </div>` : ''}
       <div class="disabled-hint" style="margin:10px 0;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
         <span>Birim fiyatları <b>KDV hariç</b> girin. En düşük <b>tam</b> teklif tutarı yeşil/kalın görünür. Teklif sayısında sınır yoktur.</span>
         ${mhTalepSiparisVarMi(t) ? `<button class="btn btn-ghost btn-sm" onclick="mhTalepManuelKapat('${t.id}')" title="Kalan miktar araç/tır bazlı alımda tam tutmuyorsa, talebi elden kapatın">🔒 Talebi Manuel Kapat</button>` : ''}
