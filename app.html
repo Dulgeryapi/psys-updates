@@ -4877,10 +4877,7 @@ function renderSatinalmaTab(){
     <div class="card">
       <h2><span class="num">1</span>Fiyat Girişi <small>${bekleyenler.length} kalem bekliyor</small></h2>
       <div class="disabled-hint" style="margin-bottom:10px;">"Fiyatı Onayla" bu kalemi Keşif Tablosu'na taşır. Gerçek Sözleşme No, aşağıda Teyit Formu oluşturup "Sözleşmeye Dönüştür" dediğinizde oluşur.</div>
-      ${bekleyenler.length ? `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
-        <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;"><input type="checkbox" ${bekleyenler.length && bekleyenler.every(s=>state.satinalmaSecili[fiyatKey(s.talepId,s.id)])?'checked':''} onchange="toggleTumFiyatGirisiSecili(this.checked)"> Hepsini Seç (tüm talepler)</label>
-        <button class="btn btn-ghost btn-sm" onclick="exportBekleyenFiyatExcel()">⬇ Tüm Projelerden Excel'e Aktar</button>
-      </div>` : ''}
+      ${bekleyenler.length ? `<label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;margin-bottom:10px;"><input type="checkbox" ${bekleyenler.length && bekleyenler.every(s=>state.satinalmaSecili[fiyatKey(s.talepId,s.id)])?'checked':''} onchange="toggleTumFiyatGirisiSecili(this.checked)"> Hepsini Seç (tüm talepler)</label>` : ''}
       ${grupBloklari}
       <div class="actions" style="margin-top:0;">
         <button class="btn btn-ghost" ${secilenSayisi?'':'disabled'} onclick="bulkConvertToSozlesme()">✓ İşaretlenenleri (${secilenSayisi}) Tek Seferde Onayla</button>
@@ -6691,7 +6688,8 @@ function renderRaporlarTab(){
     {id:'kesifler', label:'Keşifler'},
     {id:'sozlesmeler', label:'Sözleşmeler'},
     {id:'hakedisler', label:'Hakedişler'},
-    {id:'onayliKesif', label:'Onaylı Keşif (Bütçe için)'}
+    {id:'onayliKesif', label:'Onaylı Keşif (Bütçe için)'},
+    {id:'fiyatBekleyen', label:'Fiyat Bekleyen (Tüm Projeler)'}
   ];
   const nav = altTablar.map(t => `<button class="tab-btn ${state.raporAltTab===t.id?'active':''}" onclick="onFieldRender('raporAltTab','${t.id}')">${t.label}</button>`).join('');
   let icerik = '';
@@ -6699,6 +6697,7 @@ function renderRaporlarTab(){
   else if(state.raporAltTab==='kesifler') icerik = renderKesifRaporu();
   else if(state.raporAltTab==='sozlesmeler') icerik = renderSozlesmelerTab();
   else if(state.raporAltTab==='onayliKesif') icerik = renderOnayliKesifRaporu();
+  else if(state.raporAltTab==='fiyatBekleyen') icerik = renderFiyatBekleyenRaporu();
   else icerik = renderHakedisListeTab();
   return `
     <div class="page-head">
@@ -6756,6 +6755,26 @@ function exportOnayliKesifExcel(){
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Onaylı Keşif');
   XLSX.writeFile(wb, 'Onayli_Kesif_Butce_Icin.xlsx');
+}
+function renderFiyatBekleyenRaporu(){
+  const bekleyenler = pendingSatirlar();
+  const rows = bekleyenler.length ? bekleyenler.map(s=>`<tr>
+    <td>${escapeHtml(s.projeAdi)}</td><td><span class="poz-chip">${s.talepNo}</span></td>
+    <td>${s.pozNo && s.pozNo!=='-' ? `<span class="poz-preview-code" style="font-size:10px;">${s.pozNo}</span>` : '—'}</td>
+    <td class="tanim-cell">${escapeHtml(s.pozTanimi||s.tanim||'')}</td><td>${escapeHtml(s.birim)}</td>
+    <td style="text-align:right;">${s.miktar}</td></tr>`).join('')
+    : `<tr><td colspan="6"><div class="mg-empty">Fiyat bekleyen satır yok.</div></td></tr>`;
+  return `
+    <div class="card">
+      <div class="list-toolbar">
+        <div class="disabled-hint" style="margin:0;">Tüm projelerden, henüz fiyatlandırılmamış (Satınalma/Keşif → Fiyat Girişi'nde bekleyen) satırları tek listede gösterir — aynı malzemenin birden fazla projedeki talebini Excel'de bir araya getirip toplu fiyat almak için kullanabilirsiniz.</div>
+        <button class="btn btn-ghost" onclick="exportBekleyenFiyatExcel()">⬇ Excel'e Aktar</button>
+      </div>
+      <div class="table-wrap" style="box-shadow:none;border:1px solid var(--border);margin-top:10px;">
+        <table><thead><tr><th>Proje</th><th>Talep No</th><th>Poz No</th><th>Poz / Malzeme Tanımı</th><th>Birim</th><th style="text-align:right;">Miktar</th></tr></thead>
+        <tbody>${rows}</tbody></table>
+      </div>
+    </div>`;
 }
 function renderTalepRaporu(){
   const q = state.raporTalepArama.trim().toLocaleLowerCase('tr-TR');
