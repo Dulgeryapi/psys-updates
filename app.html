@@ -7449,6 +7449,7 @@ function mhSiparisMiktari(t, l){ return Math.max(0, l.miktar - mhSatirKarsila(l)
 function mhTalepSiparisVarMi(t){ return state.mh.siparisler.some(s=>!s.iptal && s.talepId===t.id); }
 function mhTalepDurumu(t){
   if(t.iptal) return 'İptal';
+  if(t.manuelKapatildi) return 'Kapatıldı (Manuel)';
   const siparisSatiri = t.satirlar.filter(l=>mhSiparisMiktari(t,l) > 0);
   const siparisVar = mhTalepSiparisVarMi(t);
   if(!siparisSatiri.length) return siparisVar ? 'Siparişe Dönüştü' : 'Merkez\'den Karşılanıyor';
@@ -7457,7 +7458,22 @@ function mhTalepDurumu(t){
   return fiyatVar ? 'Teklifte' : 'Teklif Bekliyor';
 }
 function mhTeklifTalepler(){
-  return state.mh.talepler.filter(t=>!t.iptal && t.satirlar.some(l=>mhSiparisMiktari(t,l) > 0));
+  return state.mh.talepler.filter(t=>!t.iptal && !t.manuelKapatildi && t.satirlar.some(l=>mhSiparisMiktari(t,l) > 0));
+}
+function mhTalepManuelKapat(id){
+  const t = state.mh.talepler.find(x=>x.id===id); if(!t) return;
+  if(!mhTalepSiparisVarMi(t)){ showToast('En az bir sipariş verilmeden talep manuel kapatılamaz.'); return; }
+  const kalanSatirlar = t.satirlar.filter(l=>mhSiparisMiktari(t,l) > 0);
+  const kalanToplam = kalanSatirlar.reduce((a,l)=>a+mhSiparisMiktari(t,l),0);
+  const mesaj = kalanToplam > 0
+    ? `Bu talepte hâlâ karşılanmamış ${mhFmt(kalanToplam)} birim var (örn. tır/araç bazlı alımda tam tutmayabilir). Talep yine de kapatılsın mı? Kalan miktar bir daha sipariş edilemeyecek.`
+    : 'Bu talep manuel olarak kapatılsın mı?';
+  if(!confirm(mesaj)) return;
+  t.manuelKapatildi = true;
+  t.manuelKapatmaNotu = kalanToplam > 0 ? `${mhFmt(kalanToplam)} birim karşılanmadan kapatıldı` : 'Tam karşılanarak kapatıldı';
+  t.manuelKapatmaTarihi = mhBugun();
+  saveMh(); render();
+  showToast('Talep manuel olarak kapatıldı.');
 }
 function mhSiparisDurumu(s){
   if(s.iptal) return 'İptal';
@@ -8009,7 +8025,10 @@ function mhRenderTeklif(){
       </div>`;
     }).join('');
     panel = `
-      <div class="disabled-hint" style="margin:10px 0;">Birim fiyatları <b>KDV hariç</b> girin. En düşük <b>tam</b> teklif tutarı yeşil/kalın görünür. Teklif sayısında sınır yoktur.</div>
+      <div class="disabled-hint" style="margin:10px 0;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+        <span>Birim fiyatları <b>KDV hariç</b> girin. En düşük <b>tam</b> teklif tutarı yeşil/kalın görünür. Teklif sayısında sınır yoktur.</span>
+        ${mhTalepSiparisVarMi(t) ? `<button class="btn btn-ghost btn-sm" onclick="mhTalepManuelKapat('${t.id}')" title="Kalan miktar araç/tır bazlı alımda tam tutmuyorsa, talebi elden kapatın">🔒 Talebi Manuel Kapat</button>` : ''}
+      </div>
       ${teklifKartlari}
       <button class="btn btn-ghost" onclick="mhTeklifEkle('${t.id}')" style="margin-bottom:14px;">+ Yeni Teklif Ekle</button>
       <div class="row2" style="margin-top:4px;max-width:520px;">
