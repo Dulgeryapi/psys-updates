@@ -497,6 +497,7 @@ const STORE_IZIN = 'poz_izin_v1';
 const STORE_ISSOZ_SABLON = 'poz_issoz_sablon_v1';
 const STORE_MUHASEBE_EMAIL = 'poz_muhasebe_email_v1';
 const STORE_IZIN_ONAYCILAR = 'poz_izin_onaycilar_v1';
+const STORE_MUHASEBE_ONAY_SIFRE = 'poz_muhasebe_onay_sifre_v1';
 const STORE_MLZSOZ_SABLON = 'poz_mlzsoz_sablon_v1';
 const STORE_SOZWORD_SABLON = 'poz_sozword_sablon_v1';
 const STORE_UTS_HAVUZU = 'poz_uts_havuzu_v1';
@@ -571,7 +572,8 @@ const state = {
   izinF: { personelId:'', baslangic:'', bitis:'', sebep:'', tur:'Yıllık İzin', adres:'', telefon:'', baslangicSaat:'08:00', bitisSaat:'08:00', vekaletEdenId:'' },
   editIzinId: '', editIzinDraft: {},
   issozSablonOzel: null, issozSablonAd: '', muhasebeEmail: '',
-  izinOnayciMuhasebeId: '', izinOnayciYonetimId: '',
+  izinOnayciMuhasebeId: '', izinOnayciYonetimId: '', muhasebeOnaySifre: '',
+  onayGirisiDogrulandi: false, onayGirisiSifreGirisi: '', onayGirisiSifreAyarForm: '',
   mailAyarlariYerel: { ayarliMi:false, host:'', port:'', guvenlik:'ssl', user:'' }, mailAyarlariForm: { host:'', port:'465', guvenlik:'ssl', user:'', pass:'' }, mailAyarlariSifreGoster: false,
   mlzsozSablonOzel: null, mlzsozSablonAd: '',
   sozWordSablonOzel: null, sozWordSablonAd: '',
@@ -724,6 +726,7 @@ async function loadAll(){
     try{ const r = await window.storage.get(STORE_ISSOZ_SABLON, SHARED); if(r && r.value){ const d = JSON.parse(r.value); state.issozSablonOzel = d.b64; state.issozSablonAd = d.ad||''; } }catch(e){}
     try{ const r = await window.storage.get(STORE_MUHASEBE_EMAIL, SHARED); if(r && r.value) state.muhasebeEmail = r.value; }catch(e){}
     try{ const r = await window.storage.get(STORE_IZIN_ONAYCILAR, SHARED); if(r && r.value){ const d = JSON.parse(r.value); state.izinOnayciMuhasebeId = d.muhasebe||''; state.izinOnayciYonetimId = d.yonetim||''; } }catch(e){}
+    try{ const r = await window.storage.get(STORE_MUHASEBE_ONAY_SIFRE, SHARED); if(r && r.value) state.muhasebeOnaySifre = r.value; }catch(e){}
     try{ const r = await window.storage.get(STORE_MLZSOZ_SABLON, SHARED); if(r && r.value){ const d = JSON.parse(r.value); state.mlzsozSablonOzel = d.b64; state.mlzsozSablonAd = d.ad||''; } }catch(e){}
     try{ const r = await window.storage.get(STORE_UTS_HAVUZU, SHARED); if(r && r.value) state.utsHavuzu = JSON.parse(r.value)||[]; }catch(e){}
     try{ const r = await window.storage.get(STORE_SOZWORD_SABLON, SHARED); if(r && r.value){ const d = JSON.parse(r.value); state.sozWordSablonOzel = d.b64; state.sozWordSablonAd = d.ad||''; } }catch(e){}
@@ -784,6 +787,16 @@ async function saveIzinKayitlari(){ if(hasStorage){ try{ await window.storage.se
 async function saveIssozSablon(){ if(hasStorage){ try{ await window.storage.set(STORE_ISSOZ_SABLON, JSON.stringify({ b64: state.issozSablonOzel, ad: state.issozSablonAd }), SHARED); }catch(e){} } }
 async function saveMuhasebeEmail(){ if(hasStorage){ try{ await window.storage.set(STORE_MUHASEBE_EMAIL, state.muhasebeEmail, SHARED); }catch(e){} } }
 async function saveIzinOnaycilar(){ if(hasStorage){ try{ await window.storage.set(STORE_IZIN_ONAYCILAR, JSON.stringify({ muhasebe: state.izinOnayciMuhasebeId, yonetim: state.izinOnayciYonetimId }), SHARED); }catch(e){} } }
+async function saveMuhasebeOnaySifre(){ if(hasStorage){ try{ await window.storage.set(STORE_MUHASEBE_ONAY_SIFRE, state.muhasebeOnaySifre, SHARED); }catch(e){} } }
+function onMuhasebeOnaySifreForm(v){ state.onayGirisiSifreAyarForm = v; }
+function muhasebeOnaySifreKaydet(){
+  if(!state.onayGirisiSifreAyarForm.trim()){ showToast('Şifre boş olamaz.'); return; }
+  state.muhasebeOnaySifre = state.onayGirisiSifreAyarForm.trim();
+  state.onayGirisiSifreAyarForm = '';
+  saveMuhasebeOnaySifre();
+  showToast('Onay Girişi şifresi kaydedildi.');
+  render();
+}
 function onIzinOnayciSec(rol, personelId){
   if(rol==='muhasebe') state.izinOnayciMuhasebeId = personelId;
   else state.izinOnayciYonetimId = personelId;
@@ -5385,7 +5398,14 @@ function renderManageTab(){
             <select onchange="onIzinOnayciSec('yonetim', this.value)"><option value="">— Seçin —</option>${state.personeller.map(p=>`<option value="${p.id}" ${state.izinOnayciYonetimId===p.id?'selected':''}>${escapeHtml(p.ad)}</option>`).join('')}</select>
           </div>
         </div>
-        <div class="disabled-hint" style="margin-top:8px;">İzin onayları artık kişinin kendi yöneticisinden değil, burada seçtiğiniz iki kişiden (sırayla Muhasebe → Yönetim Kurulu) geçer. "Bağlı Olduğu Yönetici" alanı sadece Organizasyon Şeması'nda görünür, onayla ilgisi yoktur.</div>
+        <div class="disabled-hint" style="margin-top:8px;">İzin onayı <b>tek aşamada, sadece Muhasebe tarafından</b> verilir. Yönetim Kurulu'na her aşamada (talep anında ve onaylanınca) bilgi maili gider, ayrıca onay vermez. "Bağlı Olduğu Yönetici" alanı sadece Organizasyon Şeması'nda görünür, onayla ilgisi yoktur.</div>
+        <div class="field" style="margin-top:14px;max-width:400px;"><label>Onay Girişi Şifresi <small style="color:var(--muted);">(Muhasebe'nin izinleri onaylarken gireceği şifre)</small></label>
+          <div style="display:flex;gap:6px;">
+            <input type="text" placeholder="${state.muhasebeOnaySifre?'(değiştirmek için yeniden girin)':'Şifre belirleyin'}" value="${escapeHtml(state.onayGirisiSifreAyarForm)}" oninput="onMuhasebeOnaySifreForm(this.value)" style="flex:1;">
+            <button class="btn btn-ghost btn-sm" onclick="muhasebeOnaySifreKaydet()">Kaydet</button>
+          </div>
+          ${state.muhasebeOnaySifre ? `<div class="disabled-hint" style="margin-top:4px;">Şifre belirlenmiş durumda.</div>` : `<div class="disabled-hint" style="margin-top:4px;color:var(--danger);">Şifre henüz belirlenmedi — belirlemeden Onay Girişi kullanılamaz.</div>`}
+        </div>
       </div>
 
     <div style="display:flex;align-items:center;gap:10px;margin:26px 0 12px;">
@@ -7211,7 +7231,7 @@ function render(){
   if(active && active.id && (active.tagName==='INPUT' || active.tagName==='TEXTAREA')){
     focusInfo = { id: active.id, start: active.selectionStart, end: active.selectionEnd };
   }
-  const renderers = { home: renderHomeTab, form: renderFormTab, list: renderListTab, talep: renderTalepTab, uts: renderUtsTab, satinalma: renderSatinalmaTab, hakedis: renderHakedisTab, butce: renderButceTab, mh: renderMhTab, personel: renderPersonelTab, raporlar: renderRaporlarTab, manage: renderManageTab, kilavuz: renderKilavuzTab };
+  const renderers = { home: renderHomeTab, form: renderFormTab, list: renderListTab, talep: renderTalepTab, uts: renderUtsTab, satinalma: renderSatinalmaTab, hakedis: renderHakedisTab, butce: renderButceTab, mh: renderMhTab, personel: renderPersonelTab, onaygirisi: renderOnayGirisiTab, raporlar: renderRaporlarTab, manage: renderManageTab, kilavuz: renderKilavuzTab };
   const body = (renderers[state.tab] || renderHomeTab)();
   const bekleyenSayisi = pendingSatirlar().length;
   app.innerHTML = `
@@ -7229,7 +7249,7 @@ function render(){
         const SATINALMA_SEKMELERI = ['satinalma','mh'];
         if(state.tab==='home') return '';
         const depBtn = (dep, label, hedefTab) => `<button class="tab-btn ${dep===aktifDep?'active':''}" onclick="setTab('${hedefTab}')" style="font-weight:700;">${label}</button>`;
-        const aktifDep = state.tab==='personel' ? 'ik' : state.tab==='manage' ? 'ayarlar' : URETIM_SEKMELERI.includes(state.tab) ? 'uretim' : SATINALMA_SEKMELERI.includes(state.tab) ? 'satinalma' : '';
+        const aktifDep = (state.tab==='personel' || state.tab==='onaygirisi') ? 'ik' : state.tab==='manage' ? 'ayarlar' : URETIM_SEKMELERI.includes(state.tab) ? 'uretim' : SATINALMA_SEKMELERI.includes(state.tab) ? 'satinalma' : '';
         const depPilleri = `
         <button class="tab-btn" onclick="setTab('home')" title="Ana Ekran">🏠</button>
         ${depBtn('uretim','🏗️ Üretim','form')}
@@ -7248,7 +7268,7 @@ function render(){
           aktifDep==='satinalma' ? `
           <button class="tab-btn ${state.tab==='satinalma'?'active':''}" onclick="setTab('satinalma')">Satınalma / Keşif ${bekleyenSayisi ? '<span class="tab-badge">'+bekleyenSayisi+'</span>' : ''}</button>
           <button class="tab-btn ${state.tab==='mh'?'active':''}" onclick="setTab('mh')">📦 Tedarik Yönetimi</button>` :
-          aktifDep==='ik' ? `<button class="tab-btn ${state.tab==='personel'?'active':''}" onclick="setTab('personel')">Personel</button>` : '';
+          aktifDep==='ik' ? `<button class="tab-btn ${state.tab==='personel'?'active':''}" onclick="setTab('personel')">Personel</button><button class="tab-btn ${state.tab==='onaygirisi'?'active':''}" onclick="setTab('onaygirisi')">🔐 Onay Girişi</button>` : '';
         return `<div class="tabs">${depPilleri}</div>${altSekmeler ? `<div class="tabs" style="margin-top:6px;">${altSekmeler}</div>` : ''}`;
       })()}
     </div>
@@ -8692,33 +8712,38 @@ function izinOnayla(id){
   const p = state.personeller.find(x=>x.id===i.personelId);
   const kalan = p ? personelKalanIzin(p) : 0;
   if(p && i.gunSayisi > kalan && !confirm(`Kalan izin hakkı (${kalan} gün), bu talepten (${i.gunSayisi} gün) az. Yine de onaylansın mı?`)) return;
-  const yonetimKisi = state.izinOnayciYonetimId ? state.personeller.find(x=>x.id===state.izinOnayciYonetimId) : null;
-  i.durum = 'Muhasebe Onayladı';
-  saveIzinKayitlari(); render();
-  showToast('Muhasebe onayı verildi, şimdi Yönetim Kurulu onayı bekliyor.');
-  if(yonetimKisi && yonetimKisi.email){
-    const {konu, govde} = izinBildirimMetni(p, i, 'Muhasebe onayı tamamlandı, Yönetim Kurulu son onayı bekleniyor.');
-    izinMailGonder(yonetimKisi.email, konu, govde, izinOnayBildirimMailLinki(yonetimKisi.email, p, i, 'Muhasebe onayı tamamlandı, Yönetim Kurulu son onayı bekleniyor.'));
-  } else if(yonetimKisi && !yonetimKisi.email){
-    showToast(`${yonetimKisi.ad} için e-posta tanımlı değil, bildirim maili gönderilemedi.`);
-  } else if(!state.izinOnayciYonetimId){
-    showToast('Yönetim Kurulu onaylayıcısı tanımlı değil. Ayarlar → Departman Yönetimi\'nden seçin.');
-  }
-}
-function izinBolumYoneticisiOnayla(id){
-  const i = state.izinKayitlari.find(x=>x.id===id); if(!i || i.durum!=='Muhasebe Onayladı') return;
-  const p = state.personeller.find(x=>x.id===i.personelId);
-  const kalan = p ? personelKalanIzin(p) : 0;
-  if(p && i.gunSayisi > kalan && !confirm(`Kalan izin hakkı (${kalan} gün), bu talepten (${i.gunSayisi} gün) az. Yine de onaylansın mı?`)) return;
   i.durum = 'Onaylandı';
   saveIzinKayitlari(); render();
-  showToast('İzin talebi son onayını aldı (Yönetim Kurulu).');
+  showToast('İzin talebi onaylandı.');
+  // Yonetim Kuruluna her zaman BILGI amacli mail gider, ayrica onay gerekmez (tek asamali onay)
+  const yonetimKisi = state.izinOnayciYonetimId ? state.personeller.find(x=>x.id===state.izinOnayciYonetimId) : null;
+  if(yonetimKisi && yonetimKisi.email){
+    const {konu, govde} = izinBildirimMetni(p, i, 'Bilginize: bu izin talebi Muhasebe tarafından onaylandı.');
+    izinMailGonder(yonetimKisi.email, konu, govde, izinOnayBildirimMailLinki(yonetimKisi.email, p, i, 'Bilginize: bu izin talebi Muhasebe tarafından onaylandı.'));
+  }
   if(p && state.muhasebeEmail){
     const {konu, govde} = izinMuhasebeMetni(i, p);
     izinMailGonder(state.muhasebeEmail, konu, govde, izinMuhasebeMailLinki(i, p));
-  } else if(p && !state.muhasebeEmail){
-    showToast('Muhasebe Bildirim E-postası tanımlı değil, mail hazırlanamadı. Ayarlar → Departman Yönetimi\'nden ekleyin.');
   }
+}
+function izinOnayTekrarGonder(id){
+  const i = state.izinKayitlari.find(x=>x.id===id); if(!i) return;
+  const p = state.personeller.find(x=>x.id===i.personelId); if(!p) return;
+  const muhasebeci = state.izinOnayciMuhasebeId ? state.personeller.find(x=>x.id===state.izinOnayciMuhasebeId) : null;
+  const yonetimKisi = state.izinOnayciYonetimId ? state.personeller.find(x=>x.id===state.izinOnayciYonetimId) : null;
+  let gonderildi = 0;
+  if(i.durum==='Beklemede' && muhasebeci && muhasebeci.email){
+    const {konu, govde} = izinBildirimMetni(p, i, 'Yeni bir izin talebi Muhasebe onayınızı bekliyor. (Tekrar gönderim)');
+    izinMailGonder(muhasebeci.email, konu, govde, izinOnayBildirimMailLinki(muhasebeci.email, p, i, 'Yeni bir izin talebi Muhasebe onayınızı bekliyor.'));
+    gonderildi++;
+  }
+  if(yonetimKisi && yonetimKisi.email){
+    const aciklama = i.durum==='Onaylandı' ? 'Bilginize: bu izin talebi onaylandı. (Tekrar gönderim)' : 'Bilginize: yeni bir izin talebi geldi. (Tekrar gönderim)';
+    const {konu, govde} = izinBildirimMetni(p, i, aciklama);
+    izinMailGonder(yonetimKisi.email, konu, govde, izinOnayBildirimMailLinki(yonetimKisi.email, p, i, aciklama));
+    gonderildi++;
+  }
+  showToast(gonderildi ? 'Bildirim maili(leri) tekrar gönderildi.' : 'Gönderilecek bir alıcı bulunamadı (onaylayıcı/e-posta tanımlı değil).');
 }
 function izinMuhasebeMetni(i, p){
   const konu = `İzin Onayı — ${p.ad} (${i.no})`;
@@ -8920,6 +8945,44 @@ function printPersonelOrgSemasi(){
     </div>`;
   printWithTitle(html, 'Organizasyon Şeması');
 }
+/* ================= ONAY GİRİŞİ (sifreli izin onayi) ================= */
+function onOnayGirisiSifre(v){ state.onayGirisiSifreGirisi = v; }
+function onayGirisiDogrula(){
+  if(!state.muhasebeOnaySifre){ showToast('Henüz bir şifre belirlenmemiş. Ayarlar → Departman Yönetimi\'nden belirleyin.'); return; }
+  if(state.onayGirisiSifreGirisi !== state.muhasebeOnaySifre){ showToast('Şifre yanlış.'); return; }
+  state.onayGirisiDogrulandi = true; state.onayGirisiSifreGirisi = '';
+  render();
+}
+function onayGirisiCikis(){ state.onayGirisiDogrulandi = false; render(); }
+function onayGirisiBekleyenListesi(){
+  return state.personeller.flatMap(per => personelIzinKayitlari(per.id).filter(i=>i.durum==='Beklemede').map(i=>({...i, ad:per.ad})));
+}
+function renderOnayGirisiTab(){
+  if(!state.onayGirisiDogrulandi){
+    return `
+    <div class="page-head"><h1>🔐 Onay Girişi</h1><p>İzin onaylarını vermek için şifrenizi girin.</p></div>
+    <div class="card" style="max-width:420px;">
+      <div class="field"><label>Şifre</label>
+        <input type="password" value="${escapeHtml(state.onayGirisiSifreGirisi)}" oninput="onOnayGirisiSifre(this.value)" onkeydown="if(event.key==='Enter') onayGirisiDogrula()" autofocus></div>
+      <div class="actions"><button class="btn btn-publish" onclick="onayGirisiDogrula()">Giriş Yap</button></div>
+    </div>`;
+  }
+  const bekleyen = onayGirisiBekleyenListesi();
+  const rows = bekleyen.length ? bekleyen.map(i=>`<tr><td>${escapeHtml(i.ad)}</td><td>${i.baslangic}</td><td>${i.bitis}</td><td style="text-align:right;">${i.gunSayisi}</td><td>${escapeHtml(i.sebep)||'—'}</td>
+    <td style="white-space:nowrap;"><button class="icon-btn" onclick="izinOnayla('${i.id}')" title="Onayla">✓ Onayla</button><button class="icon-btn" style="color:var(--danger);" onclick="izinReddet('${i.id}')" title="Reddet">🚫 Reddet</button><button class="icon-btn" onclick="izinOnayTekrarGonder('${i.id}')" title="Bildirim mailini tekrar gönder">🔁 Mail</button></td></tr>`).join('')
+    : `<tr><td colspan="6"><div class="mg-empty">Onay bekleyen izin yok.</div></td></tr>`;
+  return `
+    <div class="page-head" style="display:flex;justify-content:space-between;align-items:flex-start;">
+      <div><h1>🔐 Onay Girişi</h1><p>Onay bekleyen izin talepleri.</p></div>
+      <button class="btn btn-ghost btn-sm" onclick="onayGirisiCikis()">Çıkış</button>
+    </div>
+    <div class="card">
+      <h2>Onay Bekleyen İzin Talepleri <small>${bekleyen.length} kayıt</small></h2>
+      <div class="table-wrap" style="box-shadow:none;border:1px solid var(--border);">
+        <table><thead><tr><th>Personel</th><th>Başlangıç</th><th>Bitiş</th><th style="text-align:right;">Gün</th><th>Sebep</th><th></th></tr></thead><tbody>${rows}</tbody></table>
+      </div>
+    </div>`;
+}
 function renderPersonelTab(){
   if(state.personelOrgAcik) return renderPersonelOrgSemasi();
   const depFiltre = state.personelDepartmanFiltre || '';
@@ -9025,32 +9088,10 @@ function renderPersonelKarti(p){
     }
     return `<tr><td>${i.baslangic}</td><td>${i.bitis}</td><td style="text-align:right;">${i.gunSayisi}</td><td>${escapeHtml(i.sebep)||'—'}${i.iptalSebebi ? `<br><small style="color:var(--danger);">İptal (${i.iptalTarihi}): ${escapeHtml(i.iptalSebebi)}</small>` : ''}</td>
     <td style="${durumRenk(i.durum)}">${i.durum}${i.durum==='Onaylandı' ? (i.donusOnaylandi ? ' · Dönüş ✓' : ' · Dönüş bekliyor') : ''}</td>
-    <td style="white-space:nowrap;">${i.durum==='Beklemede' ? `<button class="icon-btn" onclick="startEditIzin('${i.id}')" title="Düzelt">✎</button><button class="icon-btn" onclick="izinOnayla('${i.id}')" title="Onayla">✓</button><button class="icon-btn" style="color:var(--danger);" onclick="izinReddet('${i.id}')" title="Reddet">🚫</button>` : ''}${i.durum==='Muhasebe Onayladı' ? `<button class="icon-btn" onclick="izinBolumYoneticisiOnayla('${i.id}')" title="Yönetim Kurulu Son Onayı">✓ Son Onay</button><button class="icon-btn" style="color:var(--danger);" onclick="izinReddet('${i.id}')" title="Reddet">🚫</button>` : ''}${(i.durum==='Onaylandı' && !i.donusOnaylandi) ? `<input type="time" id="izinDonusSaat_${i.id}" value="08:00" style="width:80px;font-size:11px;padding:2px 4px;"><button class="icon-btn" onclick="izinDonusOnayla('${i.id}')" title="Dönüşü Onayla">🔁</button>` : ''}${i.durum==='Onaylandı' ? `<button class="icon-btn del-btn" onclick="izinIptalEt('${i.id}')" title="Onaylı izni iptal et (sebep sorulur, bakiye geri yüklenir)">↩ İptal Et</button>` : ''}<button class="icon-btn" onclick="izinYazdir('${i.id}')" title="Yazdır">🖨</button><button class="icon-btn del-btn" onclick="izinSil('${i.id}')" title="Kalıcı Sil">🗑</button></td></tr>`;
+    <td style="white-space:nowrap;">${i.durum==='Beklemede' ? `<button class="icon-btn" onclick="startEditIzin('${i.id}')" title="Düzelt">✎</button><button class="icon-btn" onclick="izinOnayTekrarGonder('${i.id}')" title="Bildirim mailini tekrar gönder">🔁 Mail</button>` : ''}${(i.durum==='Onaylandı' && !i.donusOnaylandi) ? `<input type="time" id="izinDonusSaat_${i.id}" value="08:00" style="width:80px;font-size:11px;padding:2px 4px;"><button class="icon-btn" onclick="izinDonusOnayla('${i.id}')" title="Dönüşü Onayla">🔁</button>` : ''}${i.durum==='Onaylandı' ? `<button class="icon-btn del-btn" onclick="izinIptalEt('${i.id}')" title="Onaylı izni iptal et (sebep sorulur, bakiye geri yüklenir)">↩ İptal Et</button>` : ''}<button class="icon-btn" onclick="izinYazdir('${i.id}')" title="Yazdır">🖨</button><button class="icon-btn del-btn" onclick="izinSil('${i.id}')" title="Kalıcı Sil">🗑</button></td></tr>`;
   }).join('')
     : `<tr><td colspan="6"><div class="mg-empty">Henüz izin kaydı yok.</div></td></tr>`;
-  const buKisiMuhasebeOnaycisiMi = state.izinOnayciMuhasebeId === p.id;
-  const buKisiYonetimOnaycisiMi = state.izinOnayciYonetimId === p.id;
-  const tumBeklemede = buKisiMuhasebeOnaycisiMi ? state.personeller.flatMap(per => personelIzinKayitlari(per.id).filter(i=>i.durum==='Beklemede').map(i=>({...i, ad:per.ad}))) : [];
-  const tumMuhasebeOnayli = buKisiYonetimOnaycisiMi ? state.personeller.flatMap(per => personelIzinKayitlari(per.id).filter(i=>i.durum==='Muhasebe Onayladı').map(i=>({...i, ad:per.ad}))) : [];
-  const bekleyenSatir = (i, onaylaFn, etiket) => `<tr><td>${escapeHtml(i.ad)}</td><td>${i.baslangic}</td><td>${i.bitis}</td><td style="text-align:right;">${i.gunSayisi}</td><td>${escapeHtml(i.sebep)||'—'}</td>
-    <td style="white-space:nowrap;"><button class="icon-btn" onclick="${onaylaFn}('${i.id}')" title="Onayla">✓ ${etiket}</button><button class="icon-btn" style="color:var(--danger);" onclick="izinReddet('${i.id}')" title="Reddet">🚫 Reddet</button></td></tr>`;
-  const bekleyenHtml = (tumBeklemede.length || tumMuhasebeOnayli.length) ? `
-    <div style="margin-top:14px;border-top:1px solid var(--border);padding-top:12px;">
-      ${tumBeklemede.length ? `
-      <div style="font-size:12.5px;font-weight:700;margin-bottom:8px;">Muhasebe Onayı Bekleyen İzin Talepleri (${tumBeklemede.length})</div>
-      <div class="table-wrap" style="box-shadow:none;border:1px solid var(--border);margin-bottom:${tumMuhasebeOnayli.length?'14px':'0'};">
-        <table><thead><tr><th>Personel</th><th>Başlangıç</th><th>Bitiş</th><th style="text-align:right;">Gün</th><th>Sebep</th><th></th></tr></thead><tbody>
-        ${tumBeklemede.map(i=>bekleyenSatir(i,'izinOnayla','Onayla')).join('')}
-        </tbody></table>
-      </div>` : ''}
-      ${tumMuhasebeOnayli.length ? `
-      <div style="font-size:12.5px;font-weight:700;margin-bottom:8px;">Yönetim Kurulu Son Onayı Bekleyenler (${tumMuhasebeOnayli.length})</div>
-      <div class="table-wrap" style="box-shadow:none;border:1px solid var(--border);">
-        <table><thead><tr><th>Personel</th><th>Başlangıç</th><th>Bitiş</th><th style="text-align:right;">Gün</th><th>Sebep</th><th></th></tr></thead><tbody>
-        ${tumMuhasebeOnayli.map(i=>bekleyenSatir(i,'izinBolumYoneticisiOnayla','Son Onay')).join('')}
-        </tbody></table>
-      </div>` : ''}
-    </div>` : '';
+  const bekleyenHtml = ''; // onay artik Personel kartindan degil, sifreli "Onay Girisi" ekranindan yapiliyor
   const f = state.izinF;
   return `<div class="card" style="margin:8px 0;box-shadow:none;border:1px solid var(--border);background:var(--primary-tint);">
     <div style="display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap;">
