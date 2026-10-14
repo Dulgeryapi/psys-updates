@@ -992,7 +992,7 @@ function publish(){
     olcumSekli: formatCumleTR(state.olcumSekli.trim()), pozAciklama: formatCumleDuzeniTR(state.pozAciklama.trim()),
     uygulamaYeri: formatCumleTR(state.uygulamaYeri.trim()), ozelAciklama: formatCumleTR(state.ozelAciklama.trim()) || '-',
     isvTemMalzeme: formatCumleTR(state.isvTemMalzeme.trim()), yukTemMalzeme: formatCumleTR(state.yukTemMalzeme.trim()),
-    utsNo: state.utsNo.trim()||'-', utsFormNo: state.utsFormNo.trim()||'-', utsAdi: formatCumleTR(state.utsAdi.trim())||'-', statu: state.statu,
+    utsNo: state.utsNo.trim()||'-', utsFormNo: state.utsFormNo.trim()||'-', utsAdi: formatCumleTR(state.utsAdi.trim())||'-', statu: 'Yayınlı',
     tarih: new Date().toLocaleString('tr-TR')
   };
   state.list.push(entry);
@@ -4160,14 +4160,7 @@ function renderFormTab(){
               <textarea placeholder="Yüklenicinin temin edeceği malzemeler" oninput="onField('yukTemMalzeme', this.value)">${escapeHtml(state.yukTemMalzeme)}</textarea>
             </div>
           </div>
-          <div class="field">
-            <label>Statü</label>
-            <select onchange="onFieldRender('statu', this.value)">
-              <option ${state.statu==='Taslak'?'selected':''}>Taslak</option>
-              <option ${state.statu==='Yayınlı'?'selected':''}>Yayınlı</option>
-              <option ${state.statu==='Arşiv'?'selected':''}>Arşiv</option>
-            </select>
-          </div>
+          <div class="disabled-hint" style="margin-bottom:10px;">Statü burada seçilmez — "YAYINLA" dediğinizde poz otomatik "Yayınlı" olur. Daha sonra kullanılmayan bir pozu Poz Listesi'ndeki Statü rozetine tıklayarak "Arşiv"e alabilirsiniz.</div>
           <div class="field" style="margin-bottom:6px;">
             <button class="btn btn-ghost btn-sm" type="button" onclick="utsSeciciAc()">📐 UTŞ Havuzundan Seç</button>
           </div>
