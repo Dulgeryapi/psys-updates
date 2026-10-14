@@ -974,15 +974,25 @@ function publish(){
     showToast('Lütfen zorunlu alanları doldurun (grup seçimi, şantiye, poz tanımı, birim, poz türü).');
     return;
   }
+  const kontrolEdilecekler = [
+    ['Poz Açıklama', state.pozAciklama], ['Ölçüm Şekli', state.olcumSekli], ['Uygulama Yeri', state.uygulamaYeri],
+    ['Özel Açıklama', state.ozelAciklama], ['İşveren Temin Malzeme', state.isvTemMalzeme], ['Yüklenici Temin Malzeme', state.yukTemMalzeme],
+    ['UTS No', state.utsNo], ['UTS Form No', state.utsFormNo], ['UTS Adı', state.utsAdi]
+  ];
+  const bosOlanlar = kontrolEdilecekler.filter(([ad,deger])=>!deger.trim()).map(([ad])=>ad);
+  if(bosOlanlar.length){
+    if(!confirm(`Şu alanlar boş: ${bosOlanlar.join(', ')}.\n\nBoş bırakılanlar "-" olarak kaydedilecek. Yine de yayınlansın mı?`)) return;
+  }
   const anaObj = getAnaObj(state.ana), altObj = getAltObj(), taliObj = getTaliObj();
+  const doldurUyariIle = (v) => v.trim() ? formatCumleTR(v.trim()) : '-';
   const entry = {
     pozNo, ana: state.ana, anaAd: anaObj.ad, alt: state.alt, altAd: altObj.ad,
     tali: state.tali, taliAd: taliObj.ad, sira, santiye: state.santiye,
     pozTanimi: formatCumleTR(state.pozTanimi.trim()), birim: state.birim, tur: state.tur,
-    olcumSekli: formatCumleTR(state.olcumSekli.trim()), pozAciklama: formatCumleTR(state.pozAciklama.trim()),
-    uygulamaYeri: formatCumleTR(state.uygulamaYeri.trim()), ozelAciklama: formatCumleTR(state.ozelAciklama.trim()),
-    isvTemMalzeme: formatCumleTR(state.isvTemMalzeme.trim()), yukTemMalzeme: formatCumleTR(state.yukTemMalzeme.trim()),
-    utsNo: state.utsNo.trim(), utsFormNo: state.utsFormNo.trim(), utsAdi: formatCumleTR(state.utsAdi.trim()), statu: state.statu,
+    olcumSekli: doldurUyariIle(state.olcumSekli), pozAciklama: doldurUyariIle(state.pozAciklama),
+    uygulamaYeri: doldurUyariIle(state.uygulamaYeri), ozelAciklama: doldurUyariIle(state.ozelAciklama),
+    isvTemMalzeme: doldurUyariIle(state.isvTemMalzeme), yukTemMalzeme: doldurUyariIle(state.yukTemMalzeme),
+    utsNo: state.utsNo.trim()||'-', utsFormNo: state.utsFormNo.trim()||'-', utsAdi: doldurUyariIle(state.utsAdi), statu: state.statu,
     tarih: new Date().toLocaleString('tr-TR')
   };
   state.list.push(entry);
