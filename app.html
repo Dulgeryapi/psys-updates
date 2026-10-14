@@ -974,25 +974,25 @@ function publish(){
     showToast('Lütfen zorunlu alanları doldurun (grup seçimi, şantiye, poz tanımı, birim, poz türü).');
     return;
   }
-  const kontrolEdilecekler = [
-    ['Poz Açıklama', state.pozAciklama], ['Ölçüm Şekli', state.olcumSekli], ['Uygulama Yeri', state.uygulamaYeri],
-    ['Özel Açıklama', state.ozelAciklama], ['İşveren Temin Malzeme', state.isvTemMalzeme], ['Yüklenici Temin Malzeme', state.yukTemMalzeme],
-    ['UTS No', state.utsNo], ['UTS Form No', state.utsFormNo], ['UTS Adı', state.utsAdi]
+  // bu alanlar zorunlu - bos gecilemez, ama kullanici isterse kendi "-" yazip gecebilir
+  const zorunluAlanlar = [
+    ['Ölçüm Şekli', state.olcumSekli], ['Poz Açıklama', state.pozAciklama], ['Uygulama Yeri', state.uygulamaYeri],
+    ['İşveren Temin Malzeme', state.isvTemMalzeme], ['Yüklenici Temin Malzeme', state.yukTemMalzeme]
   ];
-  const bosOlanlar = kontrolEdilecekler.filter(([ad,deger])=>!deger.trim()).map(([ad])=>ad);
+  const bosOlanlar = zorunluAlanlar.filter(([ad,deger])=>!deger.trim()).map(([ad])=>ad);
   if(bosOlanlar.length){
-    if(!confirm(`Şu alanlar boş: ${bosOlanlar.join(', ')}.\n\nBoş bırakılanlar "-" olarak kaydedilecek. Yine de yayınlansın mı?`)) return;
+    showToast(`Lütfen şu alanları doldurun: ${bosOlanlar.join(', ')}. (Geçmek isterseniz "-" yazabilirsiniz.)`);
+    return;
   }
   const anaObj = getAnaObj(state.ana), altObj = getAltObj(), taliObj = getTaliObj();
-  const doldurUyariIle = (v) => v.trim() ? formatCumleTR(v.trim()) : '-';
   const entry = {
     pozNo, ana: state.ana, anaAd: anaObj.ad, alt: state.alt, altAd: altObj.ad,
     tali: state.tali, taliAd: taliObj.ad, sira, santiye: state.santiye,
-    pozTanimi: formatCumleTR(state.pozTanimi.trim()), birim: state.birim, tur: state.tur,
-    olcumSekli: doldurUyariIle(state.olcumSekli), pozAciklama: doldurUyariIle(state.pozAciklama),
-    uygulamaYeri: doldurUyariIle(state.uygulamaYeri), ozelAciklama: doldurUyariIle(state.ozelAciklama),
-    isvTemMalzeme: doldurUyariIle(state.isvTemMalzeme), yukTemMalzeme: doldurUyariIle(state.yukTemMalzeme),
-    utsNo: state.utsNo.trim()||'-', utsFormNo: state.utsFormNo.trim()||'-', utsAdi: doldurUyariIle(state.utsAdi), statu: state.statu,
+    pozTanimi: state.pozTanimi.trim().toLocaleUpperCase('tr-TR'), birim: state.birim, tur: state.tur,
+    olcumSekli: formatCumleTR(state.olcumSekli.trim()), pozAciklama: formatCumleDuzeniTR(state.pozAciklama.trim()),
+    uygulamaYeri: formatCumleTR(state.uygulamaYeri.trim()), ozelAciklama: formatCumleTR(state.ozelAciklama.trim()) || '-',
+    isvTemMalzeme: formatCumleTR(state.isvTemMalzeme.trim()), yukTemMalzeme: formatCumleTR(state.yukTemMalzeme.trim()),
+    utsNo: state.utsNo.trim()||'-', utsFormNo: state.utsFormNo.trim()||'-', utsAdi: formatCumleTR(state.utsAdi.trim())||'-', statu: state.statu,
     tarih: new Date().toLocaleString('tr-TR')
   };
   state.list.push(entry);
@@ -1020,7 +1020,7 @@ function saveEditPoz(idx){
   const d = state.editPozDraft;
   if(!d.pozTanimi.trim()){ showToast('Poz Tanımı boş olamaz.'); return; }
   if(!d.birim.trim()){ showToast('Birim boş olamaz.'); return; }
-  p.pozTanimi = formatCumleTR(d.pozTanimi.trim());
+  p.pozTanimi = d.pozTanimi.trim().toLocaleUpperCase('tr-TR');
   p.birim = d.birim.trim();
   p.tur = d.tur;
   state.editPozIdx = null; state.editPozDraft = { pozTanimi:'', birim:'', tur:'' };
@@ -2663,6 +2663,13 @@ function formatIsimTR(s){
 function formatCumleTR(s){
   const t = (s||'').trim().replace(/\s+/g,' ');
   return t ? t.charAt(0).toLocaleUpperCase('tr-TR') + t.slice(1) : t;
+}
+function formatCumleDuzeniTR(s){
+  // tum metni kucuk harfe cevirip, sadece bas harf ve her nokta/unlem/soru isaretinden sonraki harfi buyutur
+  const t = (s||'').trim().replace(/\s+/g,' ');
+  if(!t) return t;
+  const kucuk = t.toLocaleLowerCase('tr-TR');
+  return kucuk.replace(/(^|[.!?]\s+)([a-zçğıöşü])/g, (tam, onEk, harf) => onEk + harf.toLocaleUpperCase('tr-TR'));
 }
 function onTeyitProjeChange(kodu){
   state.teyitProjeFiltre = kodu;
