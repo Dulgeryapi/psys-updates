@@ -8913,6 +8913,50 @@ function addPersonel(){
   savePersoneller(); render();
   showToast('Personel eklendi:', ad);
 }
+function personelSablonIndir(){
+  const ws = XLSX.utils.json_to_sheet([{
+    'Ad Soyad': 'Örn. Ahmet Yılmaz', 'Unvan': 'Saha Mühendisi', 'Şirket Kodu': 'DLG', 'Departman': 'Üretim',
+    'Bağlı Olduğu Yönetici': '', 'Yıllık İzin Hakkı': 14, 'E-posta': ''
+  }]);
+  ws['!cols'] = [{wch:22},{wch:20},{wch:10},{wch:18},{wch:22},{wch:14},{wch:28}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Personel Şablonu');
+  XLSX.writeFile(wb, 'Personel_Ice_Aktarma_Sablonu.xlsx');
+}
+function personelIceAktar(input){
+  const dosya = input.files && input.files[0]; if(!dosya) return;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      const wb = XLSX.read(e.target.result, { type:'array' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, { defval:'' });
+      let eklenen = 0, atlanan = 0;
+      rows.forEach(r=>{
+        const ad = String(r['Ad Soyad']||'').trim();
+        const sirketKodu = String(r['Şirket Kodu']||'').trim().toLocaleUpperCase('tr-TR');
+        const departmanAdi = String(r['Departman']||'').trim();
+        if(!ad || !sirketKodu || !departmanAdi){ atlanan++; return; }
+        const sirketVar = state.sirketler.some(s=>s.kodu===sirketKodu);
+        const departmanObj = state.departmanlar.find(d=>d.ad.toLocaleLowerCase('tr-TR')===departmanAdi.toLocaleLowerCase('tr-TR'));
+        if(!sirketVar || !departmanObj){ atlanan++; return; }
+        const yoneticiAdi = String(r['Bağlı Olduğu Yönetici']||'').trim();
+        const yoneticiObj = yoneticiAdi ? state.personeller.find(p=>p.ad.toLocaleLowerCase('tr-TR')===yoneticiAdi.toLocaleLowerCase('tr-TR')) : null;
+        const toplamIzin = mhSayi(r['Yıllık İzin Hakkı']);
+        state.personeller.push({
+          id: uid('PRS'), ad: formatIsimTR(ad), sirketKodu, departmanId: departmanObj.id,
+          title: formatCumleTR(String(r['Unvan']||'').trim()), yoneticiId: yoneticiObj?yoneticiObj.id:'',
+          toplamIzin: (toplamIzin>0?toplamIzin:0), email: String(r['E-posta']||'').trim()
+        });
+        eklenen++; // ayni isimde kayit olsa bile HER ZAMAN yeni, ayri bir kayit olarak eklenir
+      });
+      savePersoneller(); render();
+      showToast(`${eklenen} personel eklendi.` + (atlanan ? ` ${atlanan} satır atlandı (Ad/Şirket Kodu/Departman eksik ya da tanımsız).` : ''));
+    }catch(e){ showToast('Dosya okunamadı, doğru şablonu kullandığınızdan emin olun.'); }
+  };
+  reader.readAsArrayBuffer(dosya);
+  input.value = '';
+}
 function personelExcelAktar(){
   if(!state.personeller.length){ showToast('Aktarılacak personel kaydı yok.'); return; }
   const rows = state.personeller.map(p=>{
@@ -9380,6 +9424,8 @@ function renderPersonelTab(){
           <button class="btn btn-ghost btn-sm" onclick="onFieldRender('personelGorunum','kart')" style="${!liste1?'background:var(--primary-tint);color:var(--primary);':''}">🔲 Kart</button>
           <button class="btn btn-ghost btn-sm" onclick="onFieldRender('personelGorunum','liste')" style="${liste1?'background:var(--primary-tint);color:var(--primary);':''}">☰ Liste</button>
           <button class="btn btn-ghost btn-sm" onclick="personelExcelAktar()">⬇ Excel'e Aktar</button>
+          <button class="btn btn-ghost btn-sm" onclick="personelSablonIndir()">⬇ Boş Şablon İndir</button>
+          <label class="btn btn-ghost btn-sm" style="cursor:pointer;">⬆ Excel'den İçe Aktar<input type="file" accept=".xlsx,.xls" style="display:none;" onchange="personelIceAktar(this)"></label>
           <button class="btn btn-ghost btn-sm" onclick="personelOrgSemasiAc()">🧑‍💼 Organizasyon Şeması</button>
         </div>
       </h2>
@@ -9830,14 +9876,20 @@ async function disDegisiklikYenile(){
   try{ await window.disDegisiklik.onayla(); }catch(e){}
   yenileEkran();
 }
+async function otomatikSessizTazele(){
+  // kullaniciya hicbir sey sormadan, baskasinin kaydettigi yeni veriyi arka planda yukler.
+  // render() zaten odak/imlec korumasi yaptigi icin, kullanici o an bir alana yaziyor olsa bile guvenlidir.
+  try{
+    const sonuc = await window.disDegisiklik.kontrolEt();
+    if(sonuc && sonuc.degisti){
+      await window.disDegisiklik.onayla();
+      if(hasStorage) await loadAll(); else render();
+    }
+  }catch(e){}
+}
 if(hasDisDegisiklik){
   setTimeout(async () => { try{ await window.disDegisiklik.onayla(); }catch(e){} }, 2000); // ilk yukleme sonrasi baseline esitle, yanlis alarm olmasin
-  setInterval(async () => {
-    try{
-      const sonuc = await window.disDegisiklik.kontrolEt();
-      if(sonuc && sonuc.degisti) disDegisiklikBannerGoster(true);
-    }catch(e){}
-  }, 20000);
+  setInterval(otomatikSessizTazele, 12000);
 }
 const hasGuncelleme = typeof window !== 'undefined' && !!window.guncelleme;
 function guncellemeYenidenBaslat(){ if(hasGuncelleme){ try{ window.guncelleme.yenidenBaslat(); }catch(e){} } }
