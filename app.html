@@ -501,6 +501,14 @@ const STORE_MUHASEBE_ONAY_SIFRE = 'poz_muhasebe_onay_sifre_v1';
 const STORE_MLZSOZ_SABLON = 'poz_mlzsoz_sablon_v1';
 const STORE_SOZWORD_SABLON = 'poz_sozword_sablon_v1';
 const STORE_UTS_HAVUZU = 'poz_uts_havuzu_v1';
+const STORE_ENVANTER_GRUPLARI = 'poz_envanter_gruplari_v1';
+const STORE_ENVANTER_LIST = 'poz_envanter_list_v1';
+const SEED_ENVANTER_GRUPLARI = [
+  { kodu:'1', ad:'Kaba İşler', alt:[] },
+  { kodu:'2', ad:'İnce İşler', alt:[ {kodu:'01',ad:'Sıva'}, {kodu:'02',ad:'Boya'}, {kodu:'03',ad:'Isı Yalıtımı'}, {kodu:'04',ad:'Su Yalıtımı'}, {kodu:'05',ad:'Zemin Kaplama'} ] },
+  { kodu:'3', ad:'Mekanik', alt:[] },
+  { kodu:'4', ad:'Elektrik', alt:[] }
+];
 const MLZSOZ_TEMPLATE_B64_DEFAULT = "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";
 const MLZSOZ_ANALIZ_ROW_TEMPLATE = '<w:tr><w:tc><w:tcPr><w:tcW w:type="pct" w:w="50%"/></w:tcPr><w:p><w:pPr><w:jc w:val="left"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Calibri" w:cs="Calibri" w:eastAsia="Calibri" w:hAnsi="Calibri"/><w:b w:val="false"/><w:bCs w:val="false"/><w:sz w:val="21"/><w:szCs w:val="21"/></w:rPr><w:t xml:space="preserve">§§ANALIZ_AD§§</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:type="pct" w:w="50%"/></w:tcPr><w:p><w:pPr><w:jc w:val="right"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Calibri" w:cs="Calibri" w:eastAsia="Calibri" w:hAnsi="Calibri"/><w:b w:val="false"/><w:bCs w:val="false"/><w:sz w:val="21"/><w:szCs w:val="21"/></w:rPr><w:t xml:space="preserve">§§ANALIZ_TUTAR§§ TL</w:t></w:r></w:p></w:tc></w:tr>';
 const SEED_HAKEDIS_TURLERI = ['Konut','Mobilizasyon','Satış Ofisi','Örnek Daire','Tutanak'];
@@ -525,6 +533,11 @@ const state = {
   pozKopyalaAcik: false, pozKopyalaArama: '',
   utsHavuzu: [], utsF: { no:'', adi:'', dosyaAdi:'', dosyaB64:'', dosyaTipi:'' }, utsSeciciAcik: false, utsSeciciArama: '',
   list: [],
+  envanterGruplari: [],
+  envanterList: [],
+  newEnvAnaKodu:'', newEnvAnaAd:'', newEnvAltAnaKodu:'', newEnvAltKodu:'', newEnvAltAd:'',
+  envAnaGrup:'', envAltGrup:'', envTanim:'', envBirim:'',
+  envListeArama:'', formAltSekme:'mevcut', listAltSekme:'mevcut',
   taxonomy: [],
   santiyeList: [],
   projeler: [],
@@ -614,6 +627,7 @@ const state = {
   editTalepSatirId: null, editTalepSatirDraft: 0,
   talepAltSekme: 'muhendislik', talepHizmetTanim: '', talepHizmetBirim: '', talepHizmetMiktar: '',
   talepMlzAd: '', talepMlzOzellik: '', talepMlzBirim: '', talepMlzMevcutStok: '', talepMlzMiktar: '', talepMlzIhtiyacTarihi: '',
+  talepMlzAltSekme: 'envantersiz', talepEnvArama: '', talepEnvSeciliKod: '', talepEnvMiktar: '', talepEnvMevcutStok: '', talepEnvIhtiyacTarihi: '', talepEnvNot: '',
 
   /* ---- Şirket ---- */
   sirketler: [],
@@ -730,6 +744,11 @@ async function loadAll(){
     try{ const r = await window.storage.get(STORE_MUHASEBE_ONAY_SIFRE, SHARED); if(r && r.value) state.muhasebeOnaySifre = r.value; }catch(e){}
     try{ const r = await window.storage.get(STORE_MLZSOZ_SABLON, SHARED); if(r && r.value){ const d = JSON.parse(r.value); state.mlzsozSablonOzel = d.b64; state.mlzsozSablonAd = d.ad||''; } }catch(e){}
     try{ const r = await window.storage.get(STORE_UTS_HAVUZU, SHARED); if(r && r.value) state.utsHavuzu = JSON.parse(r.value)||[]; }catch(e){}
+    try{
+      const r = await window.storage.get(STORE_ENVANTER_GRUPLARI, SHARED);
+      state.envanterGruplari = (r && r.value) ? JSON.parse(r.value) : JSON.parse(JSON.stringify(SEED_ENVANTER_GRUPLARI));
+    }catch(e){ state.envanterGruplari = JSON.parse(JSON.stringify(SEED_ENVANTER_GRUPLARI)); }
+    try{ const r = await window.storage.get(STORE_ENVANTER_LIST, SHARED); if(r && r.value) state.envanterList = JSON.parse(r.value)||[]; }catch(e){}
     try{ const r = await window.storage.get(STORE_SOZWORD_SABLON, SHARED); if(r && r.value){ const d = JSON.parse(r.value); state.sozWordSablonOzel = d.b64; state.sozWordSablonAd = d.ad||''; } }catch(e){}
     try{ const r = await window.storage.get(STORE_MH, SHARED); if(r && r.value) state.mh = JSON.parse(r.value); }catch(e){}
     try{
@@ -743,6 +762,7 @@ async function loadAll(){
     state.yapilanIsTurleri = [...SEED_YAPILAN_IS_TURLERI];
     state.sirketler = JSON.parse(JSON.stringify(SEED_SIRKETLER));
     state.mm03List = JSON.parse(JSON.stringify(SEED_MM03));
+    state.envanterGruplari = JSON.parse(JSON.stringify(SEED_ENVANTER_GRUPLARI));
   }
   ensureKesifDisiMm03();
   mhHazirla();
@@ -806,6 +826,8 @@ function onIzinOnayciSec(rol, personelId){
 function onMuhasebeEmail(v){ state.muhasebeEmail = v.trim(); saveMuhasebeEmail(); }
 async function saveMlzsozSablon(){ if(hasStorage){ try{ await window.storage.set(STORE_MLZSOZ_SABLON, JSON.stringify({ b64: state.mlzsozSablonOzel, ad: state.mlzsozSablonAd }), SHARED); }catch(e){} } }
 async function saveUtsHavuzu(){ if(hasStorage){ try{ await window.storage.set(STORE_UTS_HAVUZU, JSON.stringify(state.utsHavuzu), SHARED); }catch(e){} } }
+async function saveEnvanterGruplari(){ if(hasStorage){ try{ await window.storage.set(STORE_ENVANTER_GRUPLARI, JSON.stringify(state.envanterGruplari), SHARED); }catch(e){} } }
+async function saveEnvanterList(){ if(hasStorage){ try{ await window.storage.set(STORE_ENVANTER_LIST, JSON.stringify(state.envanterList), SHARED); }catch(e){} } }
 async function saveSozWordSablon(){ if(hasStorage){ try{ await window.storage.set(STORE_SOZWORD_SABLON, JSON.stringify({ b64: state.sozWordSablonOzel, ad: state.sozWordSablonAd }), SHARED); }catch(e){} } }
 function sozWordSablonYukle(input){
   const dosya = input.files && input.files[0]; if(!dosya) return;
@@ -1372,6 +1394,29 @@ function addMalzemeTalebiSatir(){
   showToast('Malzeme talebi iletildi (Tedarik Yönetimi):', formatCumleTR(ad));
   render();
 }
+function addEnvanterliMalzemeTalebiSatir(){
+  const header = getAktifTalep();
+  const env = state.envanterList.find(e=>e.kod===state.talepEnvSeciliKod);
+  const miktar = mhSayi(state.talepEnvMiktar);
+  if(!header){ showToast('Önce bir talep başlatın veya seçin.'); return; }
+  if(!env){ showToast('Lütfen envanter havuzundan bir malzeme seçin.'); return; }
+  if(!(miktar > 0)){ showToast('Geçerli bir miktar girin.'); return; }
+  mhHazirla();
+  const yerId = 'P:' + header.projeKodu;
+  let mhTalep = state.mh.talepler.find(t=>!t.iptal && !t.siparisId && t.yerId===yerId && t.uretimdenGeldi && t.uretimTalepNo===header.talepNo);
+  if(!mhTalep){
+    mhTalep = { id: uid('MHT'), no: mhNo('talep'), tarih: mhBugun(), yerId, projeKodu: header.projeKodu, notu: '',
+      iptal:false, siparisId:'', teklifler:[], satirlar:[], uretimdenGeldi:true, uretimTalepNo: header.talepNo, ongorulenButce: header.ongorulenButce||0 };
+    state.mh.talepler.push(mhTalep);
+  }
+  const kart = mhKartBul('Malzeme', env.tanim, env.birim) || mhKartOlustur('Malzeme', env.tanim, env.birim);
+  mhTalep.satirlar.push({ id: uid('MTS'), kartId: kart.id, tur:'Malzeme', tanim: env.tanim, birim: env.birim, miktar, karsila:0, sevkId:'',
+    mevcutStok: mhSayi(state.talepEnvMevcutStok)||0, ihtiyacTarihi: state.talepEnvIhtiyacTarihi||'', not: formatCumleTR(state.talepEnvNot.trim()), envanterKod: env.kod });
+  saveMh();
+  state.talepEnvArama=''; state.talepEnvSeciliKod=''; state.talepEnvMiktar=''; state.talepEnvMevcutStok=''; state.talepEnvIhtiyacTarihi=''; state.talepEnvNot='';
+  showToast('Envanter malzeme talebi iletildi (Tedarik Yönetimi):', formatCumleTR(env.tanim));
+  render();
+}
 function deleteSatir(talepId, satirId){
   const header = state.talepler.find(t=>t.id===talepId);
   if(!header) return;
@@ -1682,6 +1727,131 @@ function printPoz(idx){
 }
 
 /* ---------- taxonomy / santiye management ---------- */
+function getEnvAnaObj(kodu){ return state.envanterGruplari.find(a=>a.kodu===kodu) || null; }
+function addEnvAnaGrup(){
+  const kodu = String(state.newEnvAnaKodu||'').trim();
+  const ad = formatCumleTR(state.newEnvAnaAd.trim());
+  if(!kodu || !/^\d+$/.test(kodu)){ showToast('Ana grup kodu sadece rakam olmalı (örn. 1, 2, 5).'); return; }
+  if(!ad){ showToast('Ana grup adı gerekli.'); return; }
+  if(state.envanterGruplari.some(a=>a.kodu===kodu)){ showToast('Bu ana grup kodu zaten var:', kodu); return; }
+  state.envanterGruplari.push({ kodu, ad, alt: [] });
+  state.newEnvAnaKodu=''; state.newEnvAnaAd='';
+  saveEnvanterGruplari(); render();
+}
+function deleteEnvAnaGrup(kodu){
+  const kullanimVar = state.envanterList.some(e=>e.anaGrup===kodu);
+  if(kullanimVar){ showToast('Bu ana grupta kayıtlı envanter pozlar var, önce onları silin.'); return; }
+  if(!confirm(`"${kodu}" ana grubunu silmek istediğinize emin misiniz?`)) return;
+  state.envanterGruplari = state.envanterGruplari.filter(a=>a.kodu!==kodu);
+  saveEnvanterGruplari(); render();
+}
+function addEnvAltGrup(){
+  const anaKodu = state.newEnvAltAnaKodu;
+  const kodu = String(state.newEnvAltKodu||'').trim();
+  const ad = formatCumleTR(state.newEnvAltAd.trim());
+  const a = getEnvAnaObj(anaKodu);
+  if(!a){ showToast('Önce bir ana grup seçin.'); return; }
+  if(!kodu || !/^\d+$/.test(kodu)){ showToast('Alt grup kodu sadece rakam olmalı (örn. 01, 02).'); return; }
+  if(!ad){ showToast('Alt grup adı gerekli.'); return; }
+  const kPad = kodu.padStart(2,'0');
+  if(a.alt.some(l=>l.kodu===kPad)){ showToast('Bu alt grup kodu zaten var:', kPad); return; }
+  a.alt.push({ kodu: kPad, ad });
+  state.newEnvAltKodu=''; state.newEnvAltAd='';
+  saveEnvanterGruplari(); render();
+}
+function deleteEnvAltGrup(anaKodu, altKodu){
+  const kullanimVar = state.envanterList.some(e=>e.anaGrup===anaKodu && e.altGrup===altKodu);
+  if(kullanimVar){ showToast('Bu alt grupta kayıtlı envanter pozlar var, önce onları silin.'); return; }
+  const a = getEnvAnaObj(anaKodu); if(!a) return;
+  if(!confirm(`"${altKodu}" alt grubunu silmek istediğinize emin misiniz?`)) return;
+  a.alt = a.alt.filter(l=>l.kodu!==altKodu);
+  saveEnvanterGruplari(); render();
+}
+function envNextSira(anaKodu, altKodu){
+  const cnt = state.envanterList.filter(e=>e.anaGrup===anaKodu && e.altGrup===(altKodu||'')).length;
+  return pad4(cnt+1);
+}
+function envCurrentKod(){
+  if(!state.envAnaGrup) return null;
+  const sira = envNextSira(state.envAnaGrup, state.envAltGrup);
+  return state.envAltGrup ? `${state.envAnaGrup}.${state.envAltGrup}.${sira}` : `${state.envAnaGrup}.${sira}`;
+}
+function downloadEnvanterTemplate(){
+  const wb = XLSX.utils.book_new();
+  const headers = ['Ana Grup Kodu','Alt Grup Kodu','Tanım','Birim'];
+  const example = ['2','03','Örn. EPS (Taş Yünü)','m2'];
+  const ws = XLSX.utils.aoa_to_sheet([headers, example]);
+  ws['!cols'] = headers.map(()=>({wch:22}));
+  XLSX.utils.book_append_sheet(wb, ws, 'Envanter Şablonu');
+
+  const refRows = [['Seviye','Kod','Ad','Üst Kod (Ana)']];
+  state.envanterGruplari.forEach(a=>{
+    refRows.push(['Ana Grup', a.kodu, a.ad, '']);
+    a.alt.forEach(l=>{ refRows.push(['Alt Grup', l.kodu, l.ad, a.kodu]); });
+  });
+  refRows.push(['Birim (örnek)', BIRIM_LIST.join(', '), '', '']);
+  const ws2 = XLSX.utils.aoa_to_sheet(refRows);
+  ws2['!cols'] = [{wch:14},{wch:30},{wch:20},{wch:16}];
+  XLSX.utils.book_append_sheet(wb, ws2, 'Tanımlı Gruplar (Referans)');
+  XLSX.writeFile(wb, 'Envanter_Malzeme_Poz_Sablonu.xlsx');
+}
+function envanterIceAktar(input){
+  const file = input.files && input.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      const wb = XLSX.read(e.target.result, {type:'binary'});
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, {defval:''});
+      const sonuc = { basarili: 0, hatali: [] };
+      rows.forEach((row, idx) => {
+        const rowNo = idx+2;
+        const ana = String(row['Ana Grup Kodu']||'').trim();
+        const alt = String(row['Alt Grup Kodu']||'').trim().padStart(2,'0');
+        const tanim = String(row['Tanım']||'').trim();
+        const birim = String(row['Birim']||'').trim();
+        if(!ana && !tanim) return;
+        const anaObj = getEnvAnaObj(ana);
+        if(!anaObj){ sonuc.hatali.push({row:rowNo, mesaj:`Ana grup kodu bulunamadı: "${ana}"`}); return; }
+        let altObj = null;
+        if(row['Alt Grup Kodu'] && String(row['Alt Grup Kodu']).trim()){
+          altObj = anaObj.alt.find(l=>l.kodu===alt);
+          if(!altObj){ sonuc.hatali.push({row:rowNo, mesaj:`Alt grup kodu "${alt}" bu ana grup altında bulunamadı`}); return; }
+        }
+        if(!tanim){ sonuc.hatali.push({row:rowNo, mesaj:'Tanım boş olamaz'}); return; }
+        if(!birim){ sonuc.hatali.push({row:rowNo, mesaj:'Birim boş olamaz'}); return; }
+        const altKodu = altObj ? altObj.kodu : '';
+        const sira = envNextSira(ana, altKodu);
+        const kod = altKodu ? `${ana}.${altKodu}.${sira}` : `${ana}.${sira}`;
+        state.envanterList.push({
+          kod, anaGrup: ana, anaGrupAd: anaObj.ad, altGrup: altKodu, altGrupAd: altObj?altObj.ad:'',
+          tanim: formatCumleTR(tanim), birim, tarih: new Date().toLocaleString('tr-TR')
+        });
+        sonuc.basarili++;
+      });
+      saveEnvanterList();
+      state.importSonucEnv = sonuc;
+      showToast(`İçe aktarma tamamlandı: ${sonuc.basarili} envanter poz eklendi, ${sonuc.hatali.length} hata.`);
+      render();
+    }catch(err){ showToast('Dosya okunamadı, geçerli bir Excel dosyası seçin.'); }
+  };
+  reader.readAsBinaryString(file);
+  input.value = '';
+}
+function addEnvanterPoz(){
+  const kod = envCurrentKod();
+  const tanim = state.envTanim.trim();
+  if(!kod || !tanim || !state.envBirim){ showToast('Lütfen Ana Grup, Tanım ve Birim alanlarını doldurun.'); return; }
+  const anaObj = getEnvAnaObj(state.envAnaGrup);
+  const altObj = state.envAltGrup ? anaObj.alt.find(l=>l.kodu===state.envAltGrup) : null;
+  state.envanterList.push({
+    kod, anaGrup: state.envAnaGrup, anaGrupAd: anaObj.ad, altGrup: state.envAltGrup||'', altGrupAd: altObj?altObj.ad:'',
+    tanim: formatCumleTR(tanim), birim: state.envBirim, tarih: new Date().toLocaleString('tr-TR')
+  });
+  state.envTanim=''; state.envBirim='';
+  saveEnvanterList(); render();
+  showToast('Envanter poz oluşturuldu:', kod);
+}
 function addAna(){
   const kodu = trUpper(state.newAnaKodu.trim());
   const ad = state.newAnaAd.trim();
@@ -3851,7 +4021,16 @@ function printTumRaporlar(hakedisId){
   printWithTitle(combined, h.projeAdi + ' - ' + h.ustaAd + ' - Hakedis ' + h.hakedisNo + ' Tum Raporlar');
 }
 
-function setTab(t){ state.tab = t; if(t==='home') state.homeAcikDepartman=''; render(); }
+function setTab(t){
+  if(t !== state.tab){ state.tabGecmisi = state.tabGecmisi || []; state.tabGecmisi.push(state.tab); if(state.tabGecmisi.length>30) state.tabGecmisi.shift(); }
+  state.tab = t; if(t==='home') state.homeAcikDepartman=''; render();
+}
+function tabGeriGit(){
+  if(!state.tabGecmisi || !state.tabGecmisi.length) return;
+  const onceki = state.tabGecmisi.pop();
+  state.tab = onceki; if(onceki==='home') state.homeAcikDepartman='';
+  render();
+}
 function onAnaChange(v){ state.ana=v; state.alt=''; state.tali=''; render(); }
 function onAltChange(v){ state.alt=v; state.tali=''; render(); }
 function onTaliChange(v){ state.tali=v; render(); }
@@ -4017,7 +4196,14 @@ function renderUtsTab(){
       </div>
     </div>`;
 }
+function formEnvSekmeHtml(aktif){
+  return `<div style="display:flex;gap:6px;margin-bottom:14px;">
+    <button class="tab-btn ${aktif==='mevcut'?'active':''}" onclick="onFieldRender('formAltSekme','mevcut')">📋 Mevcut Durum</button>
+    <button class="tab-btn ${aktif==='envanter'?'active':''}" onclick="onFieldRender('formAltSekme','envanter')">📦 Envanter Malzeme Pozları</button>
+  </div>`;
+}
 function renderFormTab(){
+  if(state.formAltSekme==='envanter') return renderEnvanterOlusturTab();
   const anaObj = getAnaObj(state.ana);
   const altOptions = anaObj ? anaObj.alt : [];
   const altObj = getAltObj();
@@ -4035,6 +4221,7 @@ function renderFormTab(){
   const canPublish = pozNo && state.pozTanimi.trim() && state.birim && state.tur;
 
   return `
+    ${formEnvSekmeHtml('mevcut')}
     <div class="page-head" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:10px;">
       <div></div>
       <div style="display:flex;gap:6px;">
@@ -4201,6 +4388,90 @@ function renderFormTab(){
     </div>
   `;
 }
+function renderEnvanterOlusturTab(){
+  const anaObj = getEnvAnaObj(state.envAnaGrup);
+  const altOpts = anaObj ? anaObj.alt : [];
+  const kod = envCurrentKod();
+  const canOlustur = kod && state.envTanim.trim() && state.envBirim;
+  const anaOpts = state.envanterGruplari.map(a=>`<option value="${a.kodu}" ${a.kodu===state.envAnaGrup?'selected':''}>${a.kodu} — ${escapeHtml(a.ad)}</option>`).join('');
+  const altOptsHtml = altOpts.map(l=>`<option value="${l.kodu}" ${l.kodu===state.envAltGrup?'selected':''}>${l.kodu} — ${escapeHtml(l.ad)}</option>`).join('');
+  const birimOpts = BIRIM_LIST.map(b=>`<option value="${b}" ${b===state.envBirim?'selected':''}>${b}</option>`).join('');
+  return `
+    ${formEnvSekmeHtml('envanter')}
+    <div class="card">
+      <h2><span class="num">📦</span>Envanter Malzeme Pozu Oluştur <small>Tekrar eden malzemelere (örn. EPS, Yapıştırıcı, File, Dübel, Kalekim Sıva) sabit bir kod verin</small></h2>
+      <div class="row2">
+        <div class="field">
+          <label>Ana Grup</label>
+          <select onchange="onFieldRender('envAnaGrup', this.value); onField('envAltGrup','');"><option value="">— Seçiniz —</option>${anaOpts}</select>
+        </div>
+        <div class="field">
+          <label>Alt Grup (opsiyonel)</label>
+          <select onchange="onFieldRender('envAltGrup', this.value)" ${!state.envAnaGrup?'disabled':''}><option value="">— Yok —</option>${altOptsHtml}</select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Tanım</label>
+        <input type="text" placeholder="Örn. EPS (Taş Yünü), Yapıştırıcı, Kalekim Sıva" value="${escapeHtml(state.envTanim)}" oninput="onField('envTanim', this.value)">
+      </div>
+      <div class="field">
+        <label>Birim</label>
+        <select onchange="onFieldRender('envBirim', this.value)"><option value="">— Seçiniz —</option>${birimOpts}</select>
+      </div>
+      ${kod ? `<div class="disabled-hint" style="margin:10px 0;">Oluşacak kod: <b style="color:var(--primary);font-size:15px;">${kod}</b></div>` : ''}
+      <div class="actions">
+        <button class="btn btn-publish" ${canOlustur?'':'disabled'} onclick="addEnvanterPoz()">＋ Envanter Poz Oluştur</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2><span class="num">⬇</span>Toplu İçe Aktar</h2>
+      <div class="disabled-hint" style="margin-bottom:10px;">Boş şablonu indirip Excel'de doldurun (Ana Grup Kodu, Alt Grup Kodu, Tanım, Birim), sonra geri yükleyin — kodlar program tarafından otomatik verilir.</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-ghost" onclick="downloadEnvanterTemplate()">⬇ Boş Şablon İndir</button>
+        <label class="btn btn-ghost" style="cursor:pointer;">⬆ Excel'den İçe Aktar<input type="file" accept=".xlsx,.xls" style="display:none;" onchange="envanterIceAktar(this)"></label>
+      </div>
+      ${importSonucBlok(state.importSonucEnv)}
+    </div>
+  `;
+}
+
+function deleteEnvanterPoz(kod){
+  if(!confirm(`"${kod}" kodlu envanter pozu silmek istediğinize emin misiniz?`)) return;
+  state.envanterList = state.envanterList.filter(e=>e.kod!==kod);
+  saveEnvanterList(); render();
+  showToast('Envanter poz silindi.');
+}
+function exportEnvanterExcel(){
+  if(!state.envanterList.length){ showToast('Aktarılacak envanter poz yok.'); return; }
+  const rows = state.envanterList.map(e=>({ 'Kod': e.kod, 'Tanım': e.tanim, 'Birim': e.birim, 'Ana Grup': e.anaGrupAd, 'Alt Grup': e.altGrupAd||'—', 'Tarih': e.tarih }));
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws['!cols'] = [{wch:14},{wch:34},{wch:8},{wch:18},{wch:18},{wch:18}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Envanter Poz Listesi');
+  XLSX.writeFile(wb, 'Envanter_Poz_Listesi.xlsx');
+}
+function renderEnvanterListTab(){
+  const q = (state.envListeArama||'').trim().toLocaleLowerCase('tr-TR');
+  const filtered = state.envanterList.filter(e => !q || e.kod.toLocaleLowerCase('tr-TR').includes(q) || e.tanim.toLocaleLowerCase('tr-TR').includes(q) || e.anaGrupAd.toLocaleLowerCase('tr-TR').includes(q)).slice().reverse();
+  const rows = filtered.length ? filtered.map(e=>`<tr>
+    <td><span class="poz-chip">${e.kod}</span></td><td class="tanim-cell">${escapeHtml(e.tanim)}</td><td>${e.birim}</td>
+    <td>${escapeHtml(e.anaGrupAd)}</td><td>${e.altGrupAd?escapeHtml(e.altGrupAd):'—'}</td>
+    <td><button class="icon-btn del-btn" onclick="deleteEnvanterPoz('${e.kod}')" title="Sil">✕</button></td></tr>`).join('')
+    : `<tr><td colspan="6"><div class="mg-empty">${q ? 'Eşleşen envanter poz yok.' : 'Henüz envanter poz oluşturulmamış.'}</div></td></tr>`;
+  return `
+    ${listEnvSekmeHtml('envanter')}
+    <div class="list-toolbar">
+      <div class="search-box">
+        <input type="text" placeholder="Kod, tanım veya grup ara…" value="${escapeHtml(state.envListeArama)}" oninput="onFieldRender('envListeArama', this.value)">
+      </div>
+      <button class="btn btn-ghost" onclick="exportEnvanterExcel()">⬇ Excel'e Aktar</button>
+    </div>
+    <div class="table-wrap">
+      <table><thead><tr><th>Kod</th><th>Tanım</th><th>Birim</th><th>Ana Grup</th><th>Alt Grup</th><th></th></tr></thead>
+      <tbody>${rows}</tbody></table>
+    </div>
+  `;
+}
 
 /* ---------- render: list tab ---------- */
 function pozStatuRenk(statu){ return statu==='Yayınlı' ? 'var(--accent-dark)' : statu==='Arşiv' ? 'var(--muted)' : 'var(--primary)'; }
@@ -4216,7 +4487,14 @@ function pozStatuDegistir(idx){
   saveList(); render();
   showToast('Statü değiştirildi:', p.statu);
 }
+function listEnvSekmeHtml(aktif){
+  return `<div style="display:flex;gap:6px;margin-bottom:14px;">
+    <button class="tab-btn ${aktif==='mevcut'?'active':''}" onclick="onFieldRender('listAltSekme','mevcut')">📋 Poz Listesi</button>
+    <button class="tab-btn ${aktif==='envanter'?'active':''}" onclick="onFieldRender('listAltSekme','envanter')">📦 Envanter Poz Listesi</button>
+  </div>`;
+}
 function renderListTab(){
+  if(state.listAltSekme==='envanter') return renderEnvanterListTab();
   const q = state.search.trim().toLocaleLowerCase('tr-TR');
   const filtered = state.list
     .map((p,i)=>({...p, _idx:i}))
@@ -4225,6 +4503,7 @@ function renderListTab(){
 
   if(state.list.length===0){
     return `
+      ${listEnvSekmeHtml('mevcut')}
       <div class="table-wrap">
         <div class="empty-state">
           <div style="font-size:32px;">📋</div>
@@ -4276,6 +4555,7 @@ function renderListTab(){
   }).join('');
 
   return `
+    ${listEnvSekmeHtml('mevcut')}
     <div class="list-toolbar">
       <div class="search-box">
         <input type="text" id="pozSearchInput" placeholder="Poz no, tanım veya grup ara…" value="${escapeHtml(state.search)}" oninput="onFieldRender('search', this.value)">
@@ -4433,6 +4713,46 @@ function renderTalepTab(){
           <button id="btnHizmetSatirEkle" class="btn btn-publish" ${(aktif && state.talepHizmetTanim.trim() && state.talepHizmetBirim && mhSayi(state.talepHizmetMiktar)>0)?'':'disabled'} onclick="addHizmetSatir()">＋ Satır Ekle</button>
         </div>` : state.talepAltSekme==='malzeme' ? `
         <div class="disabled-hint" style="margin-bottom:10px;">Poz'a bağlı olmayan genel malzeme/hizmet ihtiyaçları için (çivi, tuğla, manometre gibi). Bu talep, <b>Satınalma → Tedarik Yönetimi</b>'ne otomatik düşer; teklif, onay, sipariş ve teslimat orada yürütülür.</div>
+        <div style="display:flex;gap:6px;margin-bottom:14px;">
+          <button class="tab-btn ${state.talepMlzAltSekme==='envantersiz'?'active':''}" style="font-size:12px;padding:7px 12px;" onclick="onFieldRender('talepMlzAltSekme','envantersiz')" ${!aktif?'disabled':''}>Envantersiz (elle yaz)</button>
+          <button class="tab-btn ${state.talepMlzAltSekme==='envanterli'?'active':''}" style="font-size:12px;padding:7px 12px;" onclick="onFieldRender('talepMlzAltSekme','envanterli')" ${!aktif?'disabled':''}>📦 Envanterli (havuzdan seç)</button>
+        </div>
+        ${state.talepMlzAltSekme==='envanterli' ? (() => {
+          const q = state.talepEnvArama.trim().toLocaleLowerCase('tr-TR');
+          const eslesenler = q ? state.envanterList.filter(e=>e.kod.toLocaleLowerCase('tr-TR').includes(q) || e.tanim.toLocaleLowerCase('tr-TR').includes(q)).slice(0,8) : [];
+          const secili = state.envanterList.find(e=>e.kod===state.talepEnvSeciliKod);
+          return `
+        <div class="field">
+          <label>Envanter Havuzunda Ara</label>
+          <input type="text" placeholder="Örn. EPS, Kalekim, 2.03…" value="${escapeHtml(state.talepEnvArama)}" oninput="onFieldRender('talepEnvArama', this.value)" ${!aktif?'disabled':''}>
+          ${eslesenler.length ? `<div class="mg-list" style="margin-top:8px;max-height:180px;overflow:auto;">${eslesenler.map(e=>`
+            <div class="mg-row" style="cursor:pointer;" onclick="onFieldRender('talepEnvSeciliKod','${e.kod}'); onField('talepEnvArama','');">
+              <span class="mg-code">${e.kod}</span><span class="mg-ad">${escapeHtml(e.tanim)} (${e.birim})</span>
+            </div>`).join('')}</div>` : (q ? `<div class="disabled-hint" style="margin-top:6px;">Eşleşen envanter poz bulunamadı — "Envantersiz" sekmesinden elle girebilirsiniz.</div>` : '')}
+        </div>
+        ${secili ? `<div class="disabled-hint" style="margin:10px 0;">Seçilen: <b>${secili.kod} — ${escapeHtml(secili.tanim)} (${secili.birim})</b> <button class="icon-btn" onclick="onField('talepEnvSeciliKod','')" title="Değiştir">✕</button></div>` : ''}
+        <div class="row2">
+          <div class="field">
+            <label>Miktar</label>
+            <input type="text" inputmode="decimal" placeholder="0" value="${escapeHtml(String(state.talepEnvMiktar))}" oninput="onField('talepEnvMiktar', this.value)" ${!aktif?'disabled':''}>
+          </div>
+          <div class="field">
+            <label>Mevcut Stok <small style="color:var(--muted);">(opsiyonel)</small></label>
+            <input type="text" inputmode="decimal" placeholder="0" value="${escapeHtml(String(state.talepEnvMevcutStok))}" oninput="onField('talepEnvMevcutStok', this.value)" ${!aktif?'disabled':''}>
+          </div>
+        </div>
+        <div class="field">
+          <label>İhtiyaç Tarihi</label>
+          <input type="date" value="${state.talepEnvIhtiyacTarihi}" oninput="onField('talepEnvIhtiyacTarihi', this.value)" ${!aktif?'disabled':''}>
+        </div>
+        <div class="field">
+          <label>Not (opsiyonel)</label>
+          <textarea placeholder="Satıra ilişkin ek bilgi" oninput="onField('talepEnvNot', this.value)" ${!aktif?'disabled':''}>${escapeHtml(state.talepEnvNot)}</textarea>
+        </div>
+        <div class="actions">
+          <button class="btn btn-publish" ${(aktif && secili && mhSayi(state.talepEnvMiktar)>0)?'':'disabled'} onclick="addEnvanterliMalzemeTalebiSatir()">＋ Satır Ekle</button>
+        </div>`;
+        })() : `
         <div class="field">
           <label>Malzeme Adı</label>
           <input type="text" placeholder="örn. Manometre" value="${escapeHtml(state.talepMlzAd)}" oninput="onField('talepMlzAd', this.value); refreshMlzSatirBtn();" ${!aktif?'disabled':''}>
@@ -4470,7 +4790,7 @@ function renderTalepTab(){
         </div>
         <div class="actions">
           <button id="btnMlzSatirEkle" class="btn btn-publish" ${(aktif && state.talepMlzAd.trim() && state.talepMlzBirim && mhSayi(state.talepMlzMiktar)>0)?'':'disabled'} onclick="addMalzemeTalebiSatir()">＋ Satır Ekle</button>
-        </div>` : `
+        </div>`}` : `
         <div class="field">
           <label>Poz No veya Tanımı ile Ara</label>
           <input type="text" placeholder="Örn. laminat parke, AHIMBD0001GN…" value="${escapeHtml(state.talepSearch)}" oninput="onTalepSearchInput(this.value)" ${!aktif?'disabled':''}>
@@ -5270,6 +5590,44 @@ function renderManageTab(){
           <input class="code-input" maxlength="4" type="text" placeholder="Kod" value="${escapeHtml(state.newTaliKodu)}" oninput="onField('newTaliKodu', this.value)" ${!state.mgAlt?'disabled':''}>
           <input type="text" placeholder="Tali grup adı" value="${escapeHtml(state.newTaliAd)}" oninput="onField('newTaliAd', this.value)" ${!state.mgAlt?'disabled':''}>
           <button class="btn-add" onclick="addTali()" ${!state.mgAlt?'disabled':''}>+ Ekle</button>
+        </div>
+      </div>
+
+    <div style="display:flex;align-items:center;gap:10px;margin:28px 0 12px;">
+      <span style="font-size:20px;">📦</span>
+      <div style="font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--primary);">Envanter Malzeme Pozları</div>
+    </div>
+    <div style="height:1px;background:var(--border);margin-bottom:16px;"></div>
+
+    <div class="card">
+        <h2><span class="num">1</span>Envanter Ana Grup Yönetimi</h2>
+        <div class="mg-list">${state.envanterGruplari.length ? state.envanterGruplari.map(a=>`
+          <div class="mg-row"><span class="mg-code">${a.kodu}</span><span class="mg-ad">${escapeHtml(a.ad)}</span><button class="icon-btn del-btn" onclick="deleteEnvAnaGrup('${a.kodu}')" title="Sil">✕</button></div>`).join('') : '<div class="mg-empty">Henüz ana grup yok.</div>'}</div>
+        <div class="row-add">
+          <input class="code-input" maxlength="3" type="text" placeholder="Kod (örn. 1)" value="${escapeHtml(state.newEnvAnaKodu)}" oninput="onField('newEnvAnaKodu', this.value)">
+          <input type="text" placeholder="Ana grup adı (örn. Kaba İşler)" value="${escapeHtml(state.newEnvAnaAd)}" oninput="onField('newEnvAnaAd', this.value)">
+          <button class="btn-add" onclick="addEnvAnaGrup()">+ Ekle</button>
+        </div>
+      </div>
+
+    <div class="card">
+        <h2><span class="num">2</span>Envanter Alt Grup Yönetimi</h2>
+        <div class="mg-context">
+          <select onchange="onField('newEnvAltAnaKodu', this.value); render();">
+            <option value="">— Ana grup seçin —</option>
+            ${state.envanterGruplari.map(a=>`<option value="${a.kodu}" ${a.kodu===state.newEnvAltAnaKodu?'selected':''}>${a.kodu} — ${escapeHtml(a.ad)}</option>`).join('')}
+          </select>
+        </div>
+        <div class="mg-list">${(()=>{
+          const a = getEnvAnaObj(state.newEnvAltAnaKodu);
+          if(!a) return '<div class="mg-empty">Önce bir ana grup seçin.</div>';
+          return a.alt.length ? a.alt.map(l=>`
+          <div class="mg-row"><span class="mg-code">${l.kodu}</span><span class="mg-ad">${escapeHtml(l.ad)}</span><button class="icon-btn del-btn" onclick="deleteEnvAltGrup('${a.kodu}','${l.kodu}')" title="Sil">✕</button></div>`).join('') : '<div class="mg-empty">Bu ana grupta alt grup yok.</div>';
+        })()}</div>
+        <div class="row-add">
+          <input class="code-input" maxlength="3" type="text" placeholder="Kod (örn. 01)" value="${escapeHtml(state.newEnvAltKodu)}" oninput="onField('newEnvAltKodu', this.value)" ${!state.newEnvAltAnaKodu?'disabled':''}>
+          <input type="text" placeholder="Alt grup adı (örn. Sıva)" value="${escapeHtml(state.newEnvAltAd)}" oninput="onField('newEnvAltAd', this.value)" ${!state.newEnvAltAnaKodu?'disabled':''}>
+          <button class="btn-add" onclick="addEnvAltGrup()" ${!state.newEnvAltAnaKodu?'disabled':''}>+ Ekle</button>
         </div>
       </div>
 
@@ -7445,6 +7803,7 @@ function render(){
           <p>Üretim · Satınalma · Hakediş · Malzeme · İnsan Kaynakları ve Personel</p>
         </div>
       </div>
+      ${(state.tabGecmisi && state.tabGecmisi.length) ? `<button class="tab-btn" onclick="tabGeriGit()" title="Bir önceki ekrana dön" style="margin-right:6px;">◀ Geri</button>` : ''}
       <button class="tab-btn" onclick="yenileEkran()" title="Ekranı yenile (veri kaybolmaz)" style="margin-right:6px;">🔄 Yenile</button>
       ${(() => {
         const URETIM_SEKMELERI = ['form','list','talep','uts','hakedis','butce','raporlar'];
@@ -8112,7 +8471,7 @@ function mhSiparisOlusturYeni(tid, kid, tip){
   const bolunmusMu = satirlar.some(l => miktarlar[satirlar.indexOf(l)] < mhSiparisMiktari(t,l));
   const s = { id: uid('MHS'), no: '', tarih: mhBugun(), talepId: t.id, talepNo: t.no, firma, odemeSekli: odemeAdi, teklifAciklama: k.aciklama||'', firmaLink: k.tur==='link'?k.link:'',
     kdvOrani: kdv, teslimYeriId: yerId, iptal:false, projeKodu: t.projeKodu||'', onayDurumu: 'Onay Bekliyor',
-    satirlar: satirlar.map((l,i)=>({ id: uid('SS'), talepSatirId: l.id, kartId:l.kartId, tur:l.tur, tanim:l.tanim, birim:l.birim, miktar: miktarlar[i], birimFiyat: fiyatlar[i], teslimAlinan:0 })) };
+    satirlar: satirlar.map((l,i)=>({ id: uid('SS'), talepSatirId: l.id, kartId:l.kartId, tur:l.tur, tanim:l.tanim, birim:l.birim, miktar: miktarlar[i], birimFiyat: fiyatlar[i], teslimAlinan:0, envanterKod: l.envanterKod||'' })) };
   const ara = s.satirlar.reduce((a,l)=>a + l.miktar*l.birimFiyat, 0);
   const bolunmeNotu = bolunmusMu ? '\n\n(Not: Bu talebin bir kısmı — kalan miktarlar — başka firma(lara) ayrıca sipariş edilebilir.)' : '';
   if(!confirm('"' + firma + '" (' + odemeAdi + ') kazanan olarak onaya gonderilsin mi?\n\nAra toplam (KDV haric): ' + paraTR(ara) + ' TL\nKDV %' + kdv + ': ' + paraTR(ara*kdv/100) + ' TL\nGenel toplam: ' + paraTR(ara*(1+kdv/100)) + ' TL\n\nFinans ve Yonetim Kurulu onayindan sonra siparis kesinlesecek.' + bolunmeNotu)) return;
