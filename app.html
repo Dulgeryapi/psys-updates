@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kurumsal Üretim Sistemleri — v1.0.3</title>
+<title>Kurumsal Üretim Sistemleri — v1.0.4</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
 <script>
@@ -5960,6 +5960,13 @@ function renderManageTab(){
     </div>
 
     <div class="card" style="margin-bottom:16px;">
+      <h2><span class="num">☁️</span>Web Sürümüne Veri Aktar <small>deneme aşaması — tüm mevcut verinizi web/tarayıcı sürümünün kullanacağı ortak bulut deposuna kopyalar</small></h2>
+      <div class="disabled-hint" style="margin-bottom:10px;">Bu, mevcut verinizi SİLMEZ — sadece bir KOPYASINI, web sürümünün okuyacağı ayrı bir bulut konumuna gönderir. Birden fazla kez çalıştırılabilir (her seferinde en güncel halinizi gönderir).</div>
+      <button class="btn btn-ghost btn-sm" onclick="webSurumunuAktar()" id="btnWebAktar">☁️ Mevcut Veriyi Web Sürümüne Aktar</button>
+      <div id="webAktarDurum" style="margin-top:8px;font-size:13px;color:var(--muted);"></div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px;">
       <h2><span class="num">💾</span>Program Kaynak Dosyasını İndir <small>Claude ile ileride çalışmak için saklayın</small></h2>
       <div class="disabled-hint" style="margin-bottom:10px;">${!hasKaynakDosya ? 'Bu özellik sadece kurulu masaüstü uygulamasında çalışır (tarayıcıda değil).' : 'Programın çalıştığı .html dosyasının bir kopyasını bilgisayarınıza kaydeder. İleride Claude ile bu program üzerinde çalışmak isterseniz, bu dosyayı yeni bir sohbete yükleyip kaldığınız yerden devam edebilirsiniz.'}</div>
       ${hasKaynakDosya ? `<button class="btn btn-ghost btn-sm" onclick="kaynakDosyaIndir()">⬇ Kaynak Dosyasını Kaydet (.html)</button>` : ''}
@@ -10297,6 +10304,53 @@ if(hasDisDegisiklik){
 }
 const hasGuncelleme = typeof window !== 'undefined' && !!window.guncelleme;
 function guncellemeYenidenBaslat(){ if(hasGuncelleme){ try{ window.guncelleme.yenidenBaslat(); }catch(e){} } }
+const WEB_AKTARIM_ANAHTARLARI = [STORE_LIST, STORE_TAXONOMY, STORE_SANTIYE, STORE_TALEPLER, STORE_PROJE, STORE_USTA, STORE_TEYIT, STORE_SIRKET,
+  STORE_IHZARAT_TANIM, STORE_BARTER_TANIM, STORE_HAKEDIS_TURU, STORE_YAPILAN_IS_TURU, STORE_HAKEDISLER, STORE_MM03LIST, STORE_AKTIVITELER,
+  STORE_AKTIVITEAGACI, STORE_METRAJ, STORE_BIRIMFIYAT, STORE_DEPARTMAN, STORE_PERSONEL, STORE_IZIN, STORE_ISSOZ_SABLON, STORE_MUHASEBE_EMAIL,
+  STORE_IZIN_ONAYCILAR, STORE_MUHASEBE_ONAY_SIFRE, STORE_MLZSOZ_SABLON, STORE_UTS_HAVUZU, STORE_ENVANTER_GRUPLARI, STORE_ENVANTER_LIST, STORE_MH];
+async function webSurumunuAktar(){
+  if(!confirm('Mevcut TÜM veriniz (pozlar, talepler, hakedişler, personel vb.), web sürümünün kullandığı bulut deposuna kopyalanacak. Bu bir KOPYALAMA işlemidir, mevcut veriniz silinmez. Devam edilsin mi?')) return;
+  const durumEl = document.getElementById('webAktarDurum');
+  const btn = document.getElementById('btnWebAktar');
+  if(btn) btn.disabled = true;
+  if(durumEl) durumEl.textContent = 'Veri toplanıyor…';
+  try{
+    let GITHUB_TOKEN = localStorage.getItem('psys_github_token');
+    if(!GITHUB_TOKEN){
+      GITHUB_TOKEN = prompt('İlk kullanım: GitHub erişim anahtarını girin (Osman Bey\'den alın):');
+      if(GITHUB_TOKEN) localStorage.setItem('psys_github_token', GITHUB_TOKEN.trim());
+    }
+    if(!GITHUB_TOKEN){ if(durumEl) durumEl.textContent = 'İptal edildi.'; if(btn) btn.disabled=false; return; }
+    GITHUB_TOKEN = GITHUB_TOKEN.trim();
+    const API_URL = 'https://api.github.com/repos/Dulgeryapi/psys-updates/contents/cloud-data/psys-cloud-data.json';
+    const veriObj = {};
+    for(const key of WEB_AKTARIM_ANAHTARLARI){
+      try{ const r = await window.storage.get(key, SHARED); if(r && r.value) veriObj[key] = r.value; }catch(e){}
+    }
+    if(durumEl) durumEl.textContent = 'Buluta gönderiliyor…';
+    let sha = null;
+    try{
+      const getRes = await fetch(API_URL, { headers:{ 'Authorization':'token '+GITHUB_TOKEN } });
+      if(getRes.ok){ const getData = await getRes.json(); sha = getData.sha; }
+    }catch(e){}
+    const jsonStr = JSON.stringify(veriObj);
+    const content = btoa(unescape(encodeURIComponent(jsonStr)));
+    const body = { message: 'Masaüstünden web sürümüne veri aktarımı', content, branch: 'master' };
+    if(sha) body.sha = sha;
+    const putRes = await fetch(API_URL, { method:'PUT', headers:{ 'Authorization':'token '+GITHUB_TOKEN, 'Content-Type':'application/json' }, body: JSON.stringify(body) });
+    if(putRes.ok){
+      if(durumEl) durumEl.textContent = `✅ Başarıyla aktarıldı (${Object.keys(veriObj).length} veri grubu, ${new Date().toLocaleString('tr-TR')}).`;
+      showToast('Web sürümüne veri aktarıldı.');
+    } else {
+      const errTxt = await putRes.text();
+      if(durumEl) durumEl.textContent = `❌ Hata: HTTP ${putRes.status}`;
+      showToast('Aktarım başarısız oldu.');
+    }
+  }catch(e){
+    if(durumEl) durumEl.textContent = '❌ Hata: ' + e.message;
+  }
+  if(btn) btn.disabled = false;
+}
 function guncellemeKontrolEt(){
   if(!hasGuncelleme) return;
   state.guncellemeDurum = { durum:'kontrol-ediliyor', bilgi:'' };
