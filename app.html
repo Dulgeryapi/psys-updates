@@ -1339,7 +1339,10 @@ function addSatir(){
   showToast('Satır eklendi:', poz.pozNo);
   render();
 }
-function onTalepAltSekme(v){ state.talepAltSekme = v; render(); }
+function onTalepAltSekme(v){
+  if(state.talepAltSekme!==v) tabGecmisiEkle({tip:'field', anahtar:'talepAltSekme', eski: state.talepAltSekme});
+  state.talepAltSekme = v; render();
+}
 function refreshHizmetSatirBtn(){
   const btn = document.getElementById('btnHizmetSatirEkle');
   if(btn) btn.disabled = !(state.talepHizmetTanim.trim() && state.talepHizmetBirim && mhSayi(state.talepHizmetMiktar) > 0);
@@ -4021,14 +4024,21 @@ function printTumRaporlar(hakedisId){
   printWithTitle(combined, h.projeAdi + ' - ' + h.ustaAd + ' - Hakedis ' + h.hakedisNo + ' Tum Raporlar');
 }
 
+const ALT_SEKME_ALANLARI = ['formAltSekme','listAltSekme','talepAltSekme','talepMlzAltSekme','mhSekme','raporAltTab','butceAltSekme','hakedisAltTab'];
+function tabGecmisiEkle(girdi){
+  state.tabGecmisi = state.tabGecmisi || [];
+  state.tabGecmisi.push(girdi);
+  if(state.tabGecmisi.length>30) state.tabGecmisi.shift();
+}
 function setTab(t){
-  if(t !== state.tab){ state.tabGecmisi = state.tabGecmisi || []; state.tabGecmisi.push(state.tab); if(state.tabGecmisi.length>30) state.tabGecmisi.shift(); }
+  if(t !== state.tab) tabGecmisiEkle({tip:'tab', deger: state.tab});
   state.tab = t; if(t==='home') state.homeAcikDepartman=''; render();
 }
 function tabGeriGit(){
   if(!state.tabGecmisi || !state.tabGecmisi.length) return;
-  const onceki = state.tabGecmisi.pop();
-  state.tab = onceki; if(onceki==='home') state.homeAcikDepartman='';
+  const girdi = state.tabGecmisi.pop();
+  if(girdi.tip==='field'){ state[girdi.anahtar] = girdi.eski; }
+  else { state.tab = girdi.deger; if(girdi.deger==='home') state.homeAcikDepartman=''; }
   render();
 }
 function onAnaChange(v){ state.ana=v; state.alt=''; state.tali=''; render(); }
@@ -4064,7 +4074,10 @@ function refreshSatirBtn(){
   const canAddSatir = aktif && secili && parseFloat(state.talepMiktar)>0;
   btn.disabled = !canAddSatir;
 }
-function onFieldRender(key, v){ state[key]=v; render(); }
+function onFieldRender(key, v){
+  if(ALT_SEKME_ALANLARI.includes(key) && state[key]!==v) tabGecmisiEkle({tip:'field', anahtar:key, eski: state[key]});
+  state[key]=v; render();
+}
 function onFieldBool(key, v){ state[key]=v; }
 function onTevkifatVarMiChange(checked){
   state.newHkTevkifatVarMi = checked;
