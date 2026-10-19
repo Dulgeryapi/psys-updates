@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kurumsal Üretim Sistemleri — v1.0.2</title>
+<title>Kurumsal Üretim Sistemleri — v1.0.3</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
 <script>
@@ -547,6 +547,7 @@ const state = {
   aktifTalepId: null,
   loaded: false,
   mesgulBilgi: null,
+  guncellemeDurum: null, guncellemeMevcutSurum: '',
   search: '',
   mgAna: '', mgAlt: '',
   newAnaKodu:'', newAnaAd:'',
@@ -5941,6 +5942,24 @@ function renderManageTab(){
     </div>
 
     <div class="card" style="margin-bottom:16px;">
+      <h2><span class="num">🔄</span>Program Güncellemesi</h2>
+      <div class="disabled-hint" style="margin-bottom:10px;">
+        ${!hasGuncelleme ? 'Bu özellik sadece kurulu masaüstü uygulamasında çalışır (tarayıcıda değil).' : `
+        Kurulu sürüm: <b>${escapeHtml(state.guncellemeMevcutSurum||'—')}</b><br>
+        Durum: ${
+          !state.guncellemeDurum ? 'Henüz kontrol edilmedi.' :
+          state.guncellemeDurum.durum==='kontrol-ediliyor' ? '<b>Kontrol ediliyor…</b>' :
+          state.guncellemeDurum.durum==='guncel' ? '<b style="color:var(--accent-dark);">Program güncel, yeni sürüm yok.</b>' :
+          state.guncellemeDurum.durum==='bulundu' ? `<b style="color:var(--primary);">Yeni sürüm bulundu (${escapeHtml(state.guncellemeDurum.bilgi)}), indiriliyor…</b>` :
+          state.guncellemeDurum.durum==='indirildi' ? '<b style="color:var(--accent-dark);">Güncelleme indirildi, "Yeniden Başlat" ile kurulabilir.</b>' :
+          state.guncellemeDurum.durum==='hata' ? `<b style="color:var(--danger);">Hata: ${escapeHtml(state.guncellemeDurum.bilgi)}</b>` : ''
+        }`}
+      </div>
+      ${hasGuncelleme ? `<button class="btn btn-ghost btn-sm" onclick="guncellemeKontrolEt()">🔄 Güncellemeleri Kontrol Et</button>
+      ${state.guncellemeDurum && state.guncellemeDurum.durum==='indirildi' ? `<button class="btn btn-publish btn-sm" onclick="guncellemeYenidenBaslat()">Yeniden Başlat ve Kur</button>` : ''}` : ''}
+    </div>
+
+    <div class="card" style="margin-bottom:16px;">
       <h2><span class="num">💾</span>Program Kaynak Dosyasını İndir <small>Claude ile ileride çalışmak için saklayın</small></h2>
       <div class="disabled-hint" style="margin-bottom:10px;">${!hasKaynakDosya ? 'Bu özellik sadece kurulu masaüstü uygulamasında çalışır (tarayıcıda değil).' : 'Programın çalıştığı .html dosyasının bir kopyasını bilgisayarınıza kaydeder. İleride Claude ile bu program üzerinde çalışmak isterseniz, bu dosyayı yeni bir sohbete yükleyip kaldığınız yerden devam edebilirsiniz.'}</div>
       ${hasKaynakDosya ? `<button class="btn btn-ghost btn-sm" onclick="kaynakDosyaIndir()">⬇ Kaynak Dosyasını Kaydet (.html)</button>` : ''}
@@ -10278,11 +10297,19 @@ if(hasDisDegisiklik){
 }
 const hasGuncelleme = typeof window !== 'undefined' && !!window.guncelleme;
 function guncellemeYenidenBaslat(){ if(hasGuncelleme){ try{ window.guncelleme.yenidenBaslat(); }catch(e){} } }
+function guncellemeKontrolEt(){
+  if(!hasGuncelleme) return;
+  state.guncellemeDurum = { durum:'kontrol-ediliyor', bilgi:'' };
+  render();
+  try{ window.guncelleme.kontrolEt(); }catch(e){}
+}
 if(hasGuncelleme){
   window.guncelleme.onHazir(() => {
     const el = document.getElementById('guncellemeBanner');
     if(el) el.style.display = 'flex';
   });
+  window.guncelleme.onDurum((veri) => { state.guncellemeDurum = veri; render(); });
+  window.guncelleme.surumAl().then(s => { state.guncellemeMevcutSurum = s; render(); }).catch(()=>{});
 }
 </script>
 </body>

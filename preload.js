@@ -34,7 +34,10 @@ contextBridge.exposeInMainWorld('kaynakDosya', {
 
 contextBridge.exposeInMainWorld('guncelleme', {
   onHazir: (callback) => ipcRenderer.on('guncelleme-hazir', () => callback()),
-  yenidenBaslat: () => ipcRenderer.invoke('guncelleme-yeniden-baslat')
+  onDurum: (callback) => ipcRenderer.on('guncelleme-durum', (event, veri) => callback(veri)),
+  yenidenBaslat: () => ipcRenderer.invoke('guncelleme-yeniden-baslat'),
+  kontrolEt: () => ipcRenderer.invoke('guncelleme-kontrol-et'),
+  surumAl: () => ipcRenderer.invoke('guncelleme-surum-al')
 });
 
 contextBridge.exposeInMainWorld('mailAyarlari', {

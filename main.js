@@ -246,16 +246,28 @@ function createWindow(){
 }
 
 /* ---------- Otomatik guncelleme (GitHub Releases uzerinden) ---------- */
+function guncellemeDurumGonder(durum, bilgi){
+  if(mainWindowRef) mainWindowRef.webContents.send('guncelleme-durum', { durum, bilgi: bilgi||'', surum: app.getVersion() });
+}
+autoUpdater.on('checking-for-update', () => guncellemeDurumGonder('kontrol-ediliyor'));
+autoUpdater.on('update-available', (info) => guncellemeDurumGonder('bulundu', info.version));
+autoUpdater.on('update-not-available', () => guncellemeDurumGonder('guncel'));
 autoUpdater.on('update-downloaded', () => {
+  guncellemeDurumGonder('indirildi');
   if(mainWindowRef) mainWindowRef.webContents.send('guncelleme-hazir');
 });
-autoUpdater.on('error', (err) => { console.error('Güncelleme kontrolü hatası:', err.message); });
+autoUpdater.on('error', (err) => {
+  console.error('Güncelleme kontrolü hatası:', err.message);
+  guncellemeDurumGonder('hata', err.message);
+});
 ipcMain.handle('guncelleme-yeniden-baslat', () => { autoUpdater.quitAndInstall(); });
+ipcMain.handle('guncelleme-kontrol-et', () => { autoUpdater.checkForUpdates().catch(e=>guncellemeDurumGonder('hata', e.message)); return true; });
+ipcMain.handle('guncelleme-surum-al', () => app.getVersion());
 
 app.whenReady().then(() => {
   createWindow();
   app.on('activate', () => { if(BrowserWindow.getAllWindows().length===0) createWindow(); });
-  setTimeout(() => { autoUpdater.checkForUpdates().catch(()=>{}); }, 5000); // acilista biraz bekleyip sessizce kontrol et
+  setTimeout(() => { autoUpdater.checkForUpdates().catch(e=>guncellemeDurumGonder('hata', e.message)); }, 5000);
 });
 app.on('window-all-closed', () => { store.flushSync(); heartbeatDurdur(); if(process.platform !== 'darwin') app.quit(); });
 app.on('before-quit', () => { store.flushSync(); heartbeatDurdur(); });
