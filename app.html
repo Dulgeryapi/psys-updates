@@ -9346,7 +9346,11 @@ function personelExcelAktar(){
   XLSX.utils.book_append_sheet(wb, ws, 'Personel');
   XLSX.writeFile(wb, 'Personel_Listesi.xlsx');
 }
-function personelAc(id){ state.personelAcikId = (state.personelAcikId===id) ? '' : id; render(); }
+function personelAc(id){
+  const yeni = (state.personelAcikId===id) ? '' : id;
+  tabGecmisiEkle({tip:'field', anahtar:'personelAcikId', eski: state.personelAcikId});
+  state.personelAcikId = yeni; render();
+}
 function startEditPersonel(id){
   const p = state.personeller.find(x=>x.id===id); if(!p) return;
   state.editPersonelId = id;
@@ -9921,6 +9925,7 @@ function renderPersonelKarti(p){
 /* ---------- Is Sozlesmesi (docx) ---------- */
 function onIssozF(alan, v){ state.issozF[alan] = v; }
 function issozAc(id){
+  tabGecmisiEkle({tip:'field', anahtar:'issozAcikId', eski: state.issozAcikId});
   state.issozAcikId = (state.issozAcikId===id) ? '' : id;
   if(state.issozAcikId){
     state.issozF = { tcKimlik:'', babaAdi:'', dogumYeriTarihi:'', acikAdres:'', ucret:'', calisacagiBirim:'', sozlesmeSuresi:'1 YIL', denemeSuresi:'2 AY', zorunluHizmetSuresi:'1 YIL', imzaTarihi: mhBugun(), zorunluBaslama:'', zorunluBitis:'' };
@@ -10033,6 +10038,7 @@ function renderIssozPaneli(p){
 /* ---------- Malzeme Temin Sozlesmesi (docx) ---------- */
 function onMlzsozF(alan, v){ state.mlzsozF[alan] = v; }
 function mlzsozAc(id){
+  tabGecmisiEkle({tip:'field', anahtar:'mlzsozAcikId', eski: state.mlzsozAcikId});
   state.mlzsozAcikId = (state.mlzsozAcikId===id) ? '' : id;
   if(state.mlzsozAcikId){
     state.mlzsozF = { kurumAdres:'', teslimatYeri:'', odemeSarti:'', cezaTutar:'', cezaTavan:'10', ozelMaddeler:'', imzaTarihi: mhBugun(), teknikSartnameEk:'', fiyatFarkiVar:false, fiyatFarkiKalem:'', fiyatFarkiOran:'' };
