@@ -4031,7 +4031,7 @@ function tabGecmisiEkle(girdi){
   if(state.tabGecmisi.length>30) state.tabGecmisi.shift();
 }
 function setTab(t){
-  if(t !== state.tab) tabGecmisiEkle({tip:'tab', deger: state.tab});
+  tabGecmisiEkle({tip:'tab', deger: state.tab});
   state.tab = t; if(t==='home') state.homeAcikDepartman=''; render();
 }
 function tabGeriGit(){
