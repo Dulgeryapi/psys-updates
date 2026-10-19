@@ -79,6 +79,97 @@ function heartbeatDurdur(){
 }
 
 const store = createStore(DATA_DIR, { writerId: WRITER_ID });
+
+/* ---------- GitHub Bulut Senkronu (web surumuyle ortak veri paylasimi) ---------- */
+const https = require('https');
+const GITHUB_CONFIG_FILE = path.join(app.getPath('appData'), 'dulger-psys', 'github-config.json'); // YEREL - Yandex'e hic senkron olmaz
+const GITHUB_OWNER = 'Dulgeryapi';
+const GITHUB_REPO = 'psys-updates';
+const GITHUB_PATH = 'cloud-data/psys-cloud-data.json';
+let githubSenkronDurum = { durum: 'baslamadi', mesaj: '' };
+let githubPullTamam = false; // ilk acilista en az bir kez buluttan okundu mu
+
+function githubTokenAl(){ try{ return JSON.parse(fs.readFileSync(GITHUB_CONFIG_FILE,'utf8')).token || ''; }catch(e){ return ''; } }
+function githubTokenKaydet(token){
+  try{
+    const dir = path.dirname(GITHUB_CONFIG_FILE);
+    if(!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(GITHUB_CONFIG_FILE, JSON.stringify({ token }), 'utf8');
+  }catch(e){}
+}
+function githubDurumBildir(durum, mesaj){
+  githubSenkronDurum = { durum, mesaj: mesaj||'' };
+  if(mainWindowRef) mainWindowRef.webContents.send('github-senkron-durum', githubSenkronDurum);
+}
+function githubIstek(method, body){
+  return new Promise((resolve, reject) => {
+    const token = githubTokenAl();
+    if(!token){ reject(new Error('GitHub erişim anahtarı ayarlanmamış')); return; }
+    const dataStr = body ? JSON.stringify(body) : null;
+    const req = https.request({
+      hostname: 'api.github.com',
+      path: `/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${GITHUB_PATH}`,
+      method,
+      headers: Object.assign(
+        { 'Authorization': 'token ' + token, 'User-Agent': 'psys-desktop' },
+        dataStr ? { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(dataStr) } : {}
+      )
+    }, (res) => {
+      let body = '';
+      res.on('data', d => body += d);
+      res.on('end', () => {
+        if(res.statusCode >= 200 && res.statusCode < 300){ try{ resolve(JSON.parse(body)); }catch(e){ resolve(null); } }
+        else reject(new Error('HTTP ' + res.statusCode + ': ' + body.slice(0,200)));
+      });
+    });
+    req.on('error', reject);
+    if(dataStr) req.write(dataStr);
+    req.end();
+  });
+}
+async function githubBuluttanOku(){
+  const data = await githubIstek('GET');
+  const content = Buffer.from(data.content, 'base64').toString('utf8');
+  return { veri: JSON.parse(content || '{}'), sha: data.sha };
+}
+async function githubBuluttanTazele(){
+  if(!githubTokenAl()) return;
+  try{
+    githubDurumBildir('kontrol-ediliyor');
+    const { veri } = await githubBuluttanOku();
+    let degisti = false;
+    for(const key of Object.keys(veri)){
+      const yerel = store.get(key);
+      if(!yerel || JSON.stringify(yerel.value) !== JSON.stringify(veri[key])){
+        store.set(key, veri[key]);
+        degisti = true;
+      }
+    }
+    githubPullTamam = true;
+    githubDurumBildir('guncel');
+    if(degisti && mainWindowRef) mainWindowRef.webContents.send('github-veri-guncellendi');
+  }catch(e){
+    githubDurumBildir('hata', e.message);
+  }
+}
+async function githubBulutaGonder(){
+  if(!githubTokenAl()) return;
+  try{
+    githubDurumBildir('gonderiliyor');
+    const yerelVeri = store.tumuTazele();
+    let sha = null;
+    try{ const r = await githubBuluttanOku(); sha = r.sha; }catch(e){}
+    const content = Buffer.from(JSON.stringify(yerelVeri), 'utf8').toString('base64');
+    await githubIstek('PUT', { message: 'Masaüstünden otomatik senkron', content, sha: sha||undefined, branch:'master' });
+    githubDurumBildir('guncel');
+  }catch(e){
+    githubDurumBildir('hata', e.message);
+  }
+}
+async function githubOtomatikSenkronDongusu(){
+  await githubBuluttanTazele();
+  await githubBulutaGonder();
+}
 let sonGorulenSavedAt = 0; // "Yenile" ile en son gordugumuz dis degisiklik zamani
 
 ipcMain.handle('storage-get', (event, key) => store.get(key));
@@ -263,11 +354,19 @@ autoUpdater.on('error', (err) => {
 ipcMain.handle('guncelleme-yeniden-baslat', () => { autoUpdater.quitAndInstall(); });
 ipcMain.handle('guncelleme-kontrol-et', () => { autoUpdater.checkForUpdates().catch(e=>guncellemeDurumGonder('hata', e.message)); return true; });
 ipcMain.handle('guncelleme-surum-al', () => app.getVersion());
+ipcMain.handle('github-token-al', () => !!githubTokenAl()); // sadece VAR/YOK bilgisi donuyor, token'in kendisini degil
+ipcMain.handle('github-token-kaydet', (event, token) => { githubTokenKaydet((token||'').trim()); return true; });
+ipcMain.handle('github-senkron-durum-al', () => githubSenkronDurum);
+ipcMain.handle('github-senkron-simdi', () => { githubOtomatikSenkronDongusu(); return true; });
 
 app.whenReady().then(() => {
   createWindow();
   app.on('activate', () => { if(BrowserWindow.getAllWindows().length===0) createWindow(); });
   setTimeout(() => { autoUpdater.checkForUpdates().catch(e=>guncellemeDurumGonder('hata', e.message)); }, 5000);
+  if(githubTokenAl()){
+    setTimeout(githubOtomatikSenkronDongusu, 7000); // acilista bir kez
+    setInterval(githubOtomatikSenkronDongusu, 15000); // sonra periyodik
+  }
 });
 app.on('window-all-closed', () => { store.flushSync(); heartbeatDurdur(); if(process.platform !== 'darwin') app.quit(); });
 app.on('before-quit', () => { store.flushSync(); heartbeatDurdur(); });

@@ -40,6 +40,15 @@ contextBridge.exposeInMainWorld('guncelleme', {
   surumAl: () => ipcRenderer.invoke('guncelleme-surum-al')
 });
 
+contextBridge.exposeInMainWorld('githubSenkron', {
+  tokenVarMi: () => ipcRenderer.invoke('github-token-al'),
+  tokenKaydet: (token) => ipcRenderer.invoke('github-token-kaydet', token),
+  durumAl: () => ipcRenderer.invoke('github-senkron-durum-al'),
+  onDurum: (callback) => ipcRenderer.on('github-senkron-durum', (event, veri) => callback(veri)),
+  simdiSenkronEt: () => ipcRenderer.invoke('github-senkron-simdi'),
+  onVeriGuncellendi: (callback) => ipcRenderer.on('github-veri-guncellendi', () => callback())
+});
+
 contextBridge.exposeInMainWorld('mailAyarlari', {
   oku: () => ipcRenderer.invoke('mail-ayarlari-oku'),
   kaydet: (cfg) => ipcRenderer.invoke('mail-ayarlari-kaydet', cfg),

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kurumsal Üretim Sistemleri — v1.0.4</title>
+<title>Kurumsal Üretim Sistemleri — v1.0.5</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
 <script>
@@ -548,6 +548,7 @@ const state = {
   loaded: false,
   mesgulBilgi: null,
   guncellemeDurum: null, guncellemeMevcutSurum: '',
+  githubTokenVarMi: false, githubSenkronDurum: null,
   search: '',
   mgAna: '', mgAlt: '',
   newAnaKodu:'', newAnaAd:'',
@@ -5960,10 +5961,26 @@ function renderManageTab(){
     </div>
 
     <div class="card" style="margin-bottom:16px;">
-      <h2><span class="num">☁️</span>Web Sürümüne Veri Aktar <small>deneme aşaması — tüm mevcut verinizi web/tarayıcı sürümünün kullanacağı ortak bulut deposuna kopyalar</small></h2>
-      <div class="disabled-hint" style="margin-bottom:10px;">Bu, mevcut verinizi SİLMEZ — sadece bir KOPYASINI, web sürümünün okuyacağı ayrı bir bulut konumuna gönderir. Birden fazla kez çalıştırılabilir (her seferinde en güncel halinizi gönderir).</div>
-      <button class="btn btn-ghost btn-sm" onclick="webSurumunuAktar()" id="btnWebAktar">☁️ Mevcut Veriyi Web Sürümüne Aktar</button>
-      <div id="webAktarDurum" style="margin-top:8px;font-size:13px;color:var(--muted);"></div>
+      <h2><span class="num">☁️</span>Web Sürümü Bulut Senkronu <small>deneme aşaması — masaüstü ile web/tarayıcı sürümü arasında OTOMATİK, iki yönlü senkron</small></h2>
+      ${!hasGithubSenkron ? '<div class="disabled-hint">Bu özellik sadece kurulu masaüstü uygulamasında çalışır.</div>' : `
+      <div class="disabled-hint" style="margin-bottom:10px;">Ayarlandıktan sonra, bu bilgisayardaki her değişiklik birkaç saniye içinde web sürümüne otomatik yansır — ve web sürümünde yapılan değişiklikler de buraya otomatik gelir. Elle bir şey yapmanız gerekmez.</div>
+      <div class="field" style="margin-bottom:10px;">
+        <label>GitHub Erişim Anahtarı ${state.githubTokenVarMi?'<span style="color:var(--accent-dark);">(ayarlı ✓)</span>':'<span style="color:var(--danger);">(henüz ayarlanmadı)</span>'}</label>
+        <div style="display:flex;gap:8px;">
+          <input type="password" id="githubTokenInput" placeholder="Osman Bey'den alın" style="flex:1;">
+          <button class="btn btn-ghost btn-sm" onclick="githubTokenKaydet()">Kaydet</button>
+        </div>
+      </div>
+      <div class="disabled-hint" style="margin-bottom:10px;">
+        Senkron Durumu: ${
+          !state.githubSenkronDurum ? 'Henüz çalışmadı.' :
+          state.githubSenkronDurum.durum==='kontrol-ediliyor' ? '<b>Buluttan kontrol ediliyor…</b>' :
+          state.githubSenkronDurum.durum==='gonderiliyor' ? '<b style="color:var(--primary);">Buluta gönderiliyor…</b>' :
+          state.githubSenkronDurum.durum==='guncel' ? '<b style="color:var(--accent-dark);">Güncel, senkron tamam.</b>' :
+          state.githubSenkronDurum.durum==='hata' ? `<b style="color:var(--danger);">Hata: ${escapeHtml(state.githubSenkronDurum.mesaj)}</b>` : ''
+        }
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="githubSimdiSenkronEt()">🔄 Şimdi Senkronize Et</button>`}
     </div>
 
     <div class="card" style="margin-bottom:16px;">
@@ -10306,52 +10323,24 @@ if(hasDisDegisiklik){
 }
 const hasGuncelleme = typeof window !== 'undefined' && !!window.guncelleme;
 function guncellemeYenidenBaslat(){ if(hasGuncelleme){ try{ window.guncelleme.yenidenBaslat(); }catch(e){} } }
-const WEB_AKTARIM_ANAHTARLARI = [STORE_LIST, STORE_TAXONOMY, STORE_SANTIYE, STORE_TALEPLER, STORE_PROJE, STORE_USTA, STORE_TEYIT, STORE_SIRKET,
-  STORE_IHZARAT_TANIM, STORE_BARTER_TANIM, STORE_HAKEDIS_TURU, STORE_YAPILAN_IS_TURU, STORE_HAKEDISLER, STORE_MM03LIST, STORE_AKTIVITELER,
-  STORE_AKTIVITEAGACI, STORE_METRAJ, STORE_BIRIMFIYAT, STORE_DEPARTMAN, STORE_PERSONEL, STORE_IZIN, STORE_ISSOZ_SABLON, STORE_MUHASEBE_EMAIL,
-  STORE_IZIN_ONAYCILAR, STORE_MUHASEBE_ONAY_SIFRE, STORE_MLZSOZ_SABLON, STORE_UTS_HAVUZU, STORE_ENVANTER_GRUPLARI, STORE_ENVANTER_LIST, STORE_MH];
-async function webSurumunuAktar(){
-  if(!confirm('Mevcut TÜM veriniz (pozlar, talepler, hakedişler, personel vb.), web sürümünün kullandığı bulut deposuna kopyalanacak. Bu bir KOPYALAMA işlemidir, mevcut veriniz silinmez. Devam edilsin mi?')) return;
-  const durumEl = document.getElementById('webAktarDurum');
-  const btn = document.getElementById('btnWebAktar');
-  if(btn) btn.disabled = true;
-  if(durumEl) durumEl.textContent = 'Veri toplanıyor…';
-  try{
-    let GITHUB_TOKEN = localStorage.getItem('psys_github_token');
-    if(!GITHUB_TOKEN){
-      GITHUB_TOKEN = prompt('İlk kullanım: GitHub erişim anahtarını girin (Osman Bey\'den alın):');
-      if(GITHUB_TOKEN) localStorage.setItem('psys_github_token', GITHUB_TOKEN.trim());
-    }
-    if(!GITHUB_TOKEN){ if(durumEl) durumEl.textContent = 'İptal edildi.'; if(btn) btn.disabled=false; return; }
-    GITHUB_TOKEN = GITHUB_TOKEN.trim();
-    const API_URL = 'https://api.github.com/repos/Dulgeryapi/psys-updates/contents/cloud-data/psys-cloud-data.json';
-    const veriObj = {};
-    for(const key of WEB_AKTARIM_ANAHTARLARI){
-      try{ const r = await window.storage.get(key, SHARED); if(r && r.value) veriObj[key] = r.value; }catch(e){}
-    }
-    if(durumEl) durumEl.textContent = 'Buluta gönderiliyor…';
-    let sha = null;
-    try{
-      const getRes = await fetch(API_URL, { headers:{ 'Authorization':'token '+GITHUB_TOKEN } });
-      if(getRes.ok){ const getData = await getRes.json(); sha = getData.sha; }
-    }catch(e){}
-    const jsonStr = JSON.stringify(veriObj);
-    const content = btoa(unescape(encodeURIComponent(jsonStr)));
-    const body = { message: 'Masaüstünden web sürümüne veri aktarımı', content, branch: 'master' };
-    if(sha) body.sha = sha;
-    const putRes = await fetch(API_URL, { method:'PUT', headers:{ 'Authorization':'token '+GITHUB_TOKEN, 'Content-Type':'application/json' }, body: JSON.stringify(body) });
-    if(putRes.ok){
-      if(durumEl) durumEl.textContent = `✅ Başarıyla aktarıldı (${Object.keys(veriObj).length} veri grubu, ${new Date().toLocaleString('tr-TR')}).`;
-      showToast('Web sürümüne veri aktarıldı.');
-    } else {
-      const errTxt = await putRes.text();
-      if(durumEl) durumEl.textContent = `❌ Hata: HTTP ${putRes.status}`;
-      showToast('Aktarım başarısız oldu.');
-    }
-  }catch(e){
-    if(durumEl) durumEl.textContent = '❌ Hata: ' + e.message;
-  }
-  if(btn) btn.disabled = false;
+const hasGithubSenkron = typeof window !== 'undefined' && !!window.githubSenkron;
+async function githubTokenKaydet(){
+  const el = document.getElementById('githubTokenInput');
+  const token = el ? el.value.trim() : '';
+  if(!token){ showToast('Lütfen bir anahtar girin.'); return; }
+  await window.githubSenkron.tokenKaydet(token);
+  state.githubTokenVarMi = true;
+  showToast('Kaydedildi, senkron başlıyor…');
+  if(el) el.value = '';
+  render();
+  window.githubSenkron.simdiSenkronEt();
+}
+function githubSimdiSenkronEt(){ if(hasGithubSenkron) window.githubSenkron.simdiSenkronEt(); }
+if(hasGithubSenkron){
+  window.githubSenkron.tokenVarMi().then(v => { state.githubTokenVarMi = v; render(); });
+  window.githubSenkron.durumAl().then(d => { state.githubSenkronDurum = d; render(); });
+  window.githubSenkron.onDurum((veri) => { state.githubSenkronDurum = veri; render(); });
+  window.githubSenkron.onVeriGuncellendi(() => { if(hasStorage) loadAll(); });
 }
 function guncellemeKontrolEt(){
   if(!hasGuncelleme) return;
