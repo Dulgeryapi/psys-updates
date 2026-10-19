@@ -960,7 +960,7 @@ function pozFormYeni(){
   render();
 }
 function pozFormAra(){ setTab('list'); }
-function pozKopyalaAc(){ state.pozKopyalaAcik = true; state.pozKopyalaArama=''; render(); }
+function pozKopyalaAc(){ tabGecmisiEkle({tip:'field', anahtar:'pozKopyalaAcik', eski: state.pozKopyalaAcik}); state.pozKopyalaAcik = true; state.pozKopyalaArama=''; render(); }
 function pozKopyalaKapat(){ state.pozKopyalaAcik = false; render(); }
 function pozKopyalaSec(pozNo){
   const p = state.list.find(x=>x.pozNo===pozNo); if(!p) return;
@@ -2447,7 +2447,7 @@ function startNewHakedis(){
   render();
 }
 function selectAktifHakedis(id){ if(!id) state.hkYeniFormAcik = false; state.aktifHakedisId = id || null; state.hakedisAltTab='hakedis'; render(); }
-function hkYeniFormAc(){ state.hkYeniFormAcik = true; render(); }
+function hkYeniFormAc(){ tabGecmisiEkle({tip:'field', anahtar:'hkYeniFormAcik', eski: state.hkYeniFormAcik}); state.hkYeniFormAcik = true; render(); }
 function hkYeniFormKapat(){ state.hkYeniFormAcik = false; render(); }
 function hakedisKopyala(id){
   const h = state.hakedisler.find(x=>x.id===id); if(!h || h.statu!=='Kapatıldı') return;
@@ -4024,7 +4024,7 @@ function printTumRaporlar(hakedisId){
   printWithTitle(combined, h.projeAdi + ' - ' + h.ustaAd + ' - Hakedis ' + h.hakedisNo + ' Tum Raporlar');
 }
 
-const ALT_SEKME_ALANLARI = ['formAltSekme','listAltSekme','talepAltSekme','talepMlzAltSekme','mhSekme','raporAltTab','butceAltSekme','hakedisAltTab'];
+const ALT_SEKME_ALANLARI = ['formAltSekme','listAltSekme','talepAltSekme','talepMlzAltSekme','mhSekme','raporAltTab','butceAltSekme','hakedisAltTab','agacSozlesmeAcik'];
 function tabGecmisiEkle(girdi){
   state.tabGecmisi = state.tabGecmisi || [];
   state.tabGecmisi.push(girdi);
@@ -4148,7 +4148,7 @@ function utsListesiYazdir(){
     </div>`;
   printWithTitle(html, 'UTŞ Listesi');
 }
-function utsSeciciAc(){ state.utsSeciciAcik = true; state.utsSeciciArama=''; render(); }
+function utsSeciciAc(){ tabGecmisiEkle({tip:'field', anahtar:'utsSeciciAcik', eski: state.utsSeciciAcik}); state.utsSeciciAcik = true; state.utsSeciciArama=''; render(); }
 function utsSeciciKapat(){ state.utsSeciciAcik = false; render(); }
 function utsSec(utsId){
   const u = state.utsHavuzu.find(x=>x.id===utsId); if(!u) return;
@@ -6058,7 +6058,10 @@ function renderHomeTab(){
     </div>
   `;
 }
-function toggleHomeDepartman(id){ state.homeAcikDepartman = (state.homeAcikDepartman===id) ? '' : id; render(); }
+function toggleHomeDepartman(id){
+  tabGecmisiEkle({tip:'field', anahtar:'homeAcikDepartman', eski: state.homeAcikDepartman});
+  state.homeAcikDepartman = (state.homeAcikDepartman===id) ? '' : id; render();
+}
 
 
 function renderHakedisTab(){
@@ -8289,7 +8292,10 @@ function mhTalepOlustur(){
   render();
 }
 function mhBosForm(){ return { yerId:'', projeKodu:'', notu:'', satir:{ tur:'Malzeme', tanim:'', birim:'', miktar:'', karsila:'', kartId:null }, satirlar:[] }; }
-function mhTalepAc(id){ state.mhAcikTalepId = (state.mhAcikTalepId===id) ? '' : id; render(); }
+function mhTalepAc(id){
+  tabGecmisiEkle({tip:'field', anahtar:'mhAcikTalepId', eski: state.mhAcikTalepId});
+  state.mhAcikTalepId = (state.mhAcikTalepId===id) ? '' : id; render();
+}
 function mhTalepSatirSil(tid, lid){
   const t = state.mh.talepler.find(x=>x.id===tid); if(!t) return;
   const l = t.satirlar.find(x=>x.id===lid); if(!l) return;
@@ -9664,7 +9670,7 @@ function personelOrgNode(p){
   </li>`;
 }
 function personelOrgKisiAc(id){ state.personelOrgAcik = false; personelAc(id); }
-function personelOrgSemasiAc(){ state.personelOrgAcik = true; render(); }
+function personelOrgSemasiAc(){ tabGecmisiEkle({tip:'field', anahtar:'personelOrgAcik', eski: state.personelOrgAcik}); state.personelOrgAcik = true; render(); }
 function personelOrgSemasiKapat(){ state.personelOrgAcik = false; render(); }
 function renderPersonelOrgSemasi(){
   const roots = personelOrgAgaci();
