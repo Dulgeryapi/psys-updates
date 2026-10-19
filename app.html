@@ -4038,7 +4038,7 @@ function tabGeriGit(){
   if(!state.tabGecmisi || !state.tabGecmisi.length) return;
   const girdi = state.tabGecmisi.pop();
   if(girdi.tip==='field'){ state[girdi.anahtar] = girdi.eski; }
-  else { state.tab = girdi.deger; if(girdi.deger==='home') state.homeAcikDepartman=''; }
+  else { state.tab = girdi.deger; }
   render();
 }
 function onAnaChange(v){ state.ana=v; state.alt=''; state.tali=''; render(); }
