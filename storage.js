@@ -35,6 +35,21 @@ function createStore(dataDir, opts){
       return veri;
     }catch(e){ return {}; }
   }
+  // ASENKRON versiyon - Yandex/bulut senkron klasorlerinde dosya "sanal" (henuz
+  // tam inmemis) olabilir; boyle durumda okuma gecikebilir. Senkron versiyon (readFileSync)
+  // bu gecikme suresince TUM main process'i (ve dolayisiyla programin tepki vermesini) bloke
+  // ederdi. Bu asenkron versiyon, gecikme olsa bile sureci bloke etmez - kullanici yazmaya,
+  // tiklamaya devam edebilir, islem arka planda bitince devam eder.
+  async function dosyayiTazeOkuAsync(){
+    ensureDirs();
+    try{
+      if(!fs.existsSync(dataFile)) return {};
+      const raw = await fs.promises.readFile(dataFile, 'utf8');
+      const veri = JSON.parse(raw);
+      try{ const st = await fs.promises.stat(dataFile); lastKnownMtimeMs = st.mtimeMs; }catch(e){}
+      return veri;
+    }catch(e){ return {}; }
+  }
   function okumaReferansiGetir(){
     if(!lastKnownDisk) lastKnownDisk = dosyayiTazeOku();
     return lastKnownDisk;
@@ -56,7 +71,7 @@ function createStore(dataDir, opts){
     const uygulanacakSet = pendingSet; pendingSet = {};
     const uygulanacakDel = pendingDel; pendingDel = new Set();
     try{
-      const tazeVeri = dosyayiTazeOku(); // KRITIK: baskasinin bu arada yazdigi her seyi al
+      const tazeVeri = await dosyayiTazeOkuAsync(); // KRITIK: baskasinin bu arada yazdigi her seyi al - ASENKRON, programi bloke etmez
       Object.keys(uygulanacakSet).forEach(k => { tazeVeri[k] = uygulanacakSet[k]; });
       uygulanacakDel.forEach(k => { delete tazeVeri[k]; });
       if(writerId) tazeVeri.__meta = { lastWriterId: writerId, lastSavedAt: Date.now() };
@@ -117,6 +132,13 @@ function createStore(dataDir, opts){
     lastKnownDisk = tazeVeri;
     return tazeVeri;
   }
+  async function tumuTazeleAsync(){
+    const tazeVeri = await dosyayiTazeOkuAsync();
+    Object.keys(pendingSet).forEach(k => { tazeVeri[k] = pendingSet[k]; });
+    pendingDel.forEach(k => { delete tazeVeri[k]; });
+    lastKnownDisk = tazeVeri;
+    return tazeVeri;
+  }
   return {
     get(key){
       if(pendingDel.has(key)) return null;
@@ -137,6 +159,7 @@ function createStore(dataDir, opts){
     invalidate(){ flushSync(); lastKnownDisk = null; },
     tazeOkuGerekliMi,
     tumuTazele,
+    tumuTazeleAsync,
     _durumu(){ return { dirty, writing, pendingSetSayisi: Object.keys(pendingSet).length, pendingDelSayisi: pendingDel.size }; }
   };
 }

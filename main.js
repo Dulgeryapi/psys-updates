@@ -156,7 +156,7 @@ async function githubBulutaGonder(){
   if(!githubTokenAl()) return;
   try{
     githubDurumBildir('gonderiliyor');
-    const yerelVeri = store.tumuTazele();
+    const yerelVeri = await store.tumuTazeleAsync();
     let sha = null;
     try{ const r = await githubBuluttanOku(); sha = r.sha; }catch(e){}
     const content = Buffer.from(JSON.stringify(yerelVeri), 'utf8').toString('base64');
