@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kurumsal Üretim Sistemleri — v1.0.8</title>
+<title>Kurumsal Üretim Sistemleri — v1.0.9</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
 <script>
@@ -537,7 +537,7 @@ const state = {
   envanterList: [],
   newEnvAnaKodu:'', newEnvAnaAd:'', newEnvAltAnaKodu:'', newEnvAltKodu:'', newEnvAltAd:'',
   envAnaGrup:'', envAltGrup:'', envTanim:'', envBirim:'',
-  envListeArama:'', formAltSekme:'mevcut', listAltSekme:'mevcut', pozListeSayfa:1,
+  envListeArama:'', formAltSekme:'mevcut', listAltSekme:'mevcut', pozListeSayfa:1, ayarlarKapaliBolumler:{},
   taxonomy: [],
   santiyeList: [],
   projeler: [],
@@ -560,7 +560,7 @@ const state = {
   teyitProjeFiltre: '', teyitUstaId: '',
   teyitYetkili: '', teyitTelefon: '', teyitEposta: '', teyitAdres: '', teyitIsBitimTarihi: '', teyitYerTeslimTarihi: '',
   teyitTalepNo: '', teyitSiparisNo: '', teyitIlgiliKisi: '',
-  teyitNotIsProgrami: '',
+  teyitNotIsProgrami: '', teyitIsProgramiTarihleri: [],
   teyitNotHakedisOdemeleri: '',
   teyitNotTeminatSozlesme: '',
   teyitSecili: {},
@@ -1471,11 +1471,10 @@ function convertToSozlesme(talepId, satirId){
   if(!fiyat || fiyat<=0){ showToast('Geçerli bir birim fiyat girin.'); return; }
   satir.birimFiyat = fiyat;
   satir.tutar = Math.round(fiyat * satir.miktar * 100)/100;
-  satir.durum = 'sozlesmeye_cevrildi';
-  satir.sozlesmeTarihi = new Date().toLocaleString('tr-TR');
+  satir.durum = 'finans_onayi_bekliyor';
   delete state.fiyatTaslak[fiyatKey(talepId,satirId)];
   saveTalepler();
-  showToast('Sözleşmeye çevrildi:', satir.pozNo);
+  showToast('Fiyat onaylandı, Finans Onayına gönderildi:', satir.pozNo);
   render();
 }
 function sonIslemiGeriAl(){
@@ -1628,6 +1627,13 @@ function pendingSatirlar(){
   const out = [];
   state.talepler.forEach(h => h.satirlar.forEach(s => {
     if(s.durum==='bekliyor') out.push({...s, talepId:h.id, talepNo:h.talepNo, projeAdi:h.projeAdi});
+  }));
+  return out;
+}
+function onayBekleyenItems(durum){
+  const out = [];
+  state.talepler.forEach(h => h.satirlar.forEach(s => {
+    if(s.durum===durum) out.push({...s, talepId:h.id, talepNo:h.talepNo, projeAdi:h.projeAdi});
   }));
   return out;
 }
@@ -2859,6 +2865,9 @@ function onTeyitProjeChange(kodu){
   }
   render();
 }
+function teyitIsProgramiTarihEkle(){ state.teyitIsProgramiTarihleri.push(''); render(); }
+function teyitIsProgramiTarihYaz(i, v){ state.teyitIsProgramiTarihleri[i] = v; }
+function teyitIsProgramiTarihSil(i){ state.teyitIsProgramiTarihleri.splice(i,1); render(); }
 function olusturTeyitFormu(){
   const usta = getUstaObj(state.teyitUstaId);
   if(!state.teyitProjeFiltre){ showToast('Lütfen bir proje seçin.'); return; }
@@ -2886,7 +2895,7 @@ function olusturTeyitFormu(){
     yetkili: formatCumleTR(state.teyitYetkili.trim()), telefon: state.teyitTelefon.trim(), eposta: state.teyitEposta.trim(), adres: formatCumleTR(state.teyitAdres.trim()),
     isBitimTarihi: state.teyitIsBitimTarihi, yerTeslimTarihi: state.teyitYerTeslimTarihi,
     talepNo: talepNolar, siparisNo: siparisNolar, ilgiliKisi: state.teyitIlgiliKisi.trim(),
-    notlarIsProgrami: state.teyitNotIsProgrami.split('\n').map(s=>formatCumleTR(s.trim())).filter(Boolean),
+    notlarIsProgrami: state.teyitIsProgramiTarihleri.filter(Boolean).map(tarihNoktali),
     notlarHakedisOdemeleri: state.teyitNotHakedisOdemeleri.split('\n').map(s=>formatCumleTR(s.trim())).filter(Boolean),
     notlarTeminatSozlesme: state.teyitNotTeminatSozlesme.split('\n').map(s=>formatCumleTR(s.trim())).filter(Boolean),
     kalemler: items.map(t=>({ pozNo:t.pozNo, pozTanimi:t.pozTanimi, birim:t.birim, miktar:t.miktar, birimFiyat:t.birimFiyat, tutar:t.tutar, tur:t.tur||'poz' })),
@@ -2903,7 +2912,7 @@ function olusturTeyitFormu(){
   state.teyitSecili = {};
   state.teyitYetkili=''; state.teyitTelefon=''; state.teyitEposta=''; state.teyitAdres='';
   state.teyitIsBitimTarihi=''; state.teyitYerTeslimTarihi='';
-  state.teyitNotIsProgrami=''; state.teyitNotHakedisOdemeleri=''; state.teyitNotTeminatSozlesme='';
+  state.teyitNotIsProgrami=''; state.teyitIsProgramiTarihleri=[]; state.teyitNotHakedisOdemeleri=''; state.teyitNotTeminatSozlesme='';
   showToast('Teyit formu oluşturuldu:', record.teyitNo);
   printTeyitFormu(record.id);
   render();
@@ -4953,51 +4962,64 @@ function paraInputOnBlurSigned(el, stateKey){
 }
 function openTeklifPaneli(talepId){
   state.teklifAcikTalepId = talepId;
-  if(!state.teklifDraft[talepId]) state.teklifDraft[talepId] = { firma1:'', firma2:'', firma3:'', notlar1:'', notlar2:'', notlar3:'', fiyatlar:{} };
+  if(!state.teklifDraft[talepId]) state.teklifDraft[talepId] = { teklifler: [ {id: uid('TK'), firma:'', notlar:'', fiyatlar:{}} ] };
   render();
 }
 function closeTeklifPaneli(){ state.teklifAcikTalepId = null; render(); }
-function onTeklifFirmaAdi(talepId, slot, val){ state.teklifDraft[talepId]['firma'+slot] = val; }
-function onTeklifNotlar(talepId, slot, val){ state.teklifDraft[talepId]['notlar'+slot] = val; }
-function onTeklifFiyat(talepId, satirId, slot, input){
-  const v = sanitizeNumericInput(input);
-  const d = state.teklifDraft[talepId];
-  if(!d.fiyatlar[satirId]) d.fiyatlar[satirId] = {};
-  d.fiyatlar[satirId]['f'+slot] = v;
-  const el = document.getElementById('teklifToplam_'+talepId+'_'+slot);
-  if(el) el.textContent = paraTR(teklifFirmaToplam(talepId, slot)) + ' TL';
+function teklifKutusuEkle(talepId){
+  state.teklifDraft[talepId].teklifler.push({ id: uid('TK'), firma:'', notlar:'', fiyatlar:{} });
+  render();
 }
-function teklifFirmaToplam(talepId, slot){
-  const header = state.talepler.find(t=>t.id===talepId);
+function teklifKutusuSil(talepId, teklifId){
   const d = state.teklifDraft[talepId];
-  if(!header || !d) return 0;
+  if(d.teklifler.length<=1){ showToast('En az bir teklif kutusu kalmalı.'); return; }
+  d.teklifler = d.teklifler.filter(t=>t.id!==teklifId);
+  render();
+}
+function onTeklifFirmaAdi2(talepId, teklifId, val){
+  const t = state.teklifDraft[talepId].teklifler.find(x=>x.id===teklifId); if(t) t.firma = val;
+}
+function onTeklifNotlar2(talepId, teklifId, val){
+  const t = state.teklifDraft[talepId].teklifler.find(x=>x.id===teklifId); if(t) t.notlar = val;
+}
+function onTeklifFiyat2(talepId, teklifId, satirId, tip, input){
+  const v = sanitizeNumericInput(input);
+  const t = state.teklifDraft[talepId].teklifler.find(x=>x.id===teklifId); if(!t) return;
+  if(!t.fiyatlar[satirId]) t.fiyatlar[satirId] = {};
+  t.fiyatlar[satirId][tip] = v;
+  const el = document.getElementById('teklifToplam_'+talepId+'_'+teklifId+'_'+tip);
+  if(el) el.textContent = paraTR(teklifKutusuToplam(talepId, teklifId, tip)) + ' TL';
+}
+function teklifKutusuToplam(talepId, teklifId, tip){
+  const header = state.talepler.find(t=>t.id===talepId);
+  const t = state.teklifDraft[talepId].teklifler.find(x=>x.id===teklifId);
+  if(!header || !t) return 0;
   let toplam = 0;
   header.satirlar.filter(s=>s.durum==='bekliyor').forEach(s => {
-    const fv = parseFloat((d.fiyatlar[s.id]||{})['f'+slot]);
+    const fv = parseFloat((t.fiyatlar[s.id]||{})[tip]);
     if(fv>0) toplam += fv * s.miktar;
   });
   return toplam;
 }
-function secKazananTeklif(talepId, slot){
+const ODEME_TURU_ETIKET = { nakit:'Nakit', kkTaksitli:'KK Taksitli', cek:'Çek' };
+function secKazananTeklif2(talepId, teklifId, tip){
   const header = state.talepler.find(t=>t.id===talepId);
-  const d = state.teklifDraft[talepId];
-  const firmaAdi = formatIsimTR(d['firma'+slot]||'');
+  const t = state.teklifDraft[talepId].teklifler.find(x=>x.id===teklifId);
+  const firmaAdi = formatIsimTR(t.firma||'');
   if(!firmaAdi){ showToast('Önce firma/usta adını yazın.'); return; }
   const bekleyen = header.satirlar.filter(s=>s.durum==='bekliyor');
   let eksik = false;
-  bekleyen.forEach(s => {
-    const fv = parseFloat((d.fiyatlar[s.id]||{})['f'+slot]);
-    if(!fv || fv<=0) eksik = true;
-  });
-  if(eksik){ showToast('Bu firma için talepteki tüm pozlara fiyat girilmemiş.'); return; }
-  if(!confirm('Bu kazanan seçimini onaylamadan önce lütfen yönetici onayı alınız.\n\nOnay alındı, devam edilsin mi?')) return;
+  bekleyen.forEach(s => { const fv = parseFloat((t.fiyatlar[s.id]||{})[tip]); if(!fv || fv<=0) eksik = true; });
+  if(eksik){ showToast('Bu firma/ödeme türü için talepteki tüm pozlara fiyat girilmemiş.'); return; }
+  if(!confirm(`"${firmaAdi}" firmasını ${ODEME_TURU_ETIKET[tip]} ödeme ile kazanan seçmek istediğinize emin misiniz?\n\nBu seçim, Finans Onayı ve Yönetim Kurulu Onayı aşamalarına gönderilecektir.`)) return;
   state.sonKazananIslem = { talepId, satirIdleri: bekleyen.map(s=>s.id) };
   bekleyen.forEach(s => {
-    const fv = parseFloat((d.fiyatlar[s.id]||{})['f'+slot]);
+    const fv = parseFloat((t.fiyatlar[s.id]||{})[tip]);
     s.birimFiyat = fv;
     s.tutar = Math.round(fv * s.miktar * 100)/100;
-    s.durum = 'sozlesmeye_cevrildi';
-    s.sozlesmeTarihi = new Date().toLocaleString('tr-TR');
+    s.durum = 'finans_onayi_bekliyor';
+    s.kazananFirma = firmaAdi;
+    s.odemeTuru = tip;
     delete state.fiyatTaslak[fiyatKey(talepId, s.id)];
   });
   saveTalepler();
@@ -5020,8 +5042,39 @@ function secKazananTeklif(talepId, slot){
   }
   state.teklifKazanan[talepId] = firmaAdi;
   state.teklifAcikTalepId = null;
-  showToast('Kazanan seçildi ve Keşif Tablosu\'na taşındı:', firmaAdi + ustaNotu);
+  showToast('Kazanan seçildi, Finans Onayına gönderildi:', firmaAdi + ustaNotu);
   render();
+}
+function satirFinansOnayla(talepId, satirId){
+  const header = state.talepler.find(t=>t.id===talepId);
+  const s = header ? header.satirlar.find(x=>x.id===satirId) : null;
+  if(!s || s.durum!=='finans_onayi_bekliyor') return;
+  if(!confirm(`"${s.pozTanimi}" (${s.kazananFirma||'—'}) için Finans onayı veriliyor. Devam edilsin mi?`)) return;
+  s.durum = 'yk_onayi_bekliyor';
+  s.finansOnayTarihi = new Date().toLocaleString('tr-TR');
+  saveTalepler(); render();
+  showToast('Finans onayı verildi, Yönetim Kurulu onayı bekleniyor.');
+}
+function satirYkOnayla(talepId, satirId){
+  const header = state.talepler.find(t=>t.id===talepId);
+  const s = header ? header.satirlar.find(x=>x.id===satirId) : null;
+  if(!s || s.durum!=='yk_onayi_bekliyor') return;
+  if(!confirm(`"${s.pozTanimi}" (${s.kazananFirma||'—'}) için Yönetim Kurulu onayı veriliyor. Onaylanınca sözleşme kesinleşecek. Devam edilsin mi?`)) return;
+  s.durum = 'sozlesmeye_cevrildi';
+  s.ykOnayTarihi = new Date().toLocaleString('tr-TR');
+  s.sozlesmeTarihi = new Date().toLocaleString('tr-TR');
+  saveTalepler(); render();
+  showToast('Yönetim Kurulu onayı verildi, sözleşmeye çevrildi.');
+}
+function satirOnayReddet(talepId, satirId){
+  const header = state.talepler.find(t=>t.id===talepId);
+  const s = header ? header.satirlar.find(x=>x.id===satirId) : null;
+  if(!s) return;
+  const sebep = prompt('Onay reddediliyor. Lütfen sebebini yazın:');
+  if(sebep===null) return;
+  s.durum = 'bekliyor'; s.birimFiyat=null; s.tutar=null; s.kazananFirma=null; s.odemeTuru=null; s.finansOnayTarihi=null;
+  saveTalepler(); render();
+  showToast('Onay reddedildi, kalem tekrar teklif aşamasına döndü.');
 }
 function saveUstaBilgiDraft(){
   const u = getUstaObj(state.ustaBilgiDraft.ustaId); if(!u) return;
@@ -5057,18 +5110,25 @@ function printTeklifKarsilastirma(talepId){
   const header = state.talepler.find(t=>t.id===talepId);
   if(!header) return;
   const bekleyen = header.satirlar.filter(s=>s.durum==='bekliyor');
-  const d = state.teklifDraft[talepId] || {firma1:'',firma2:'',firma3:'',notlar1:'',notlar2:'',notlar3:'',fiyatlar:{}};
-  const slots = [1,2,3].filter(slot => (d['firma'+slot]||'').trim());
-  if(slots.length===0){ showToast('Yazdırmadan önce en az bir firma adı girin.'); return; }
-  const firmaBasliklari = slots.map(slot => `<th>${escapeHtml(d['firma'+slot])}<br><small style="font-weight:400;">Birim Fiyat</small></th>`).join('');
+  const d = state.teklifDraft[talepId] || {teklifler:[]};
+  const ODEME_TURLERI = ['nakit','kkTaksitli','cek'];
+  const dolular = d.teklifler.filter(t => (t.firma||'').trim());
+  if(dolular.length===0){ showToast('Yazdırmadan önce en az bir firma adı girin.'); return; }
+  // her firma icin, hangi odeme turlerinde fiyat girilmisse onlari kolon olarak goster
+  const kolonlar = [];
+  dolular.forEach(t => ODEME_TURLERI.forEach(tip => {
+    if(bekleyen.some(s => (t.fiyatlar[s.id]||{})[tip])) kolonlar.push({teklif:t, tip});
+  }));
+  const basliklar = kolonlar.map(k => `<th>${escapeHtml(k.teklif.firma)}<br><small style="font-weight:400;">${ODEME_TURU_ETIKET[k.tip]}</small></th>`).join('');
   const rows = bekleyen.map(s => {
-    const hucreler = slots.map(slot => {
-      const fv = (d.fiyatlar[s.id]||{})['f'+slot];
+    const hucreler = kolonlar.map(k => {
+      const fv = (k.teklif.fiyatlar[s.id]||{})[k.tip];
       return `<td style="text-align:right;">${fv ? paraTR(parseFloat(fv)) : '—'}</td>`;
     }).join('');
     return `<tr><td>${s.pozNo}</td><td>${escapeHtml(s.pozTanimi)}</td><td>${s.miktar} ${s.birim}</td>${hucreler}</tr>`;
   }).join('');
-  const toplamHucreler = slots.map(slot => `<td style="text-align:right;font-weight:700;">${paraTR(teklifFirmaToplam(talepId, slot))} TL</td>`).join('');
+  const toplamHucreler = kolonlar.map(k => `<td style="text-align:right;font-weight:700;">${paraTR(teklifKutusuToplam(talepId, k.teklif.id, k.tip))} TL</td>`).join('');
+  const notluTeklifler = dolular.filter(t => (t.notlar||'').trim());
   const html = `
     <div class="print-doc">
       <div class="print-header">
@@ -5082,14 +5142,14 @@ function printTeklifKarsilastirma(talepId){
         <tr><th>Tarih</th><td>${new Date().toLocaleString('tr-TR')}</td></tr>
       </table>
       <table class="print-table" style="margin-top:14px;">
-        <thead><tr><th>Poz No</th><th>Poz Tanımı</th><th>Miktar</th>${firmaBasliklari}</tr></thead>
+        <thead><tr><th>Poz No</th><th>Poz Tanımı</th><th>Miktar</th>${basliklar}</tr></thead>
         <tbody>${rows}</tbody>
         <tfoot><tr><td colspan="3" style="text-align:right;font-weight:700;">TOPLAM</td>${toplamHucreler}</tr></tfoot>
       </table>
-      ${slots.some(slot => (d['notlar'+slot]||'').trim()) ? `
+      ${notluTeklifler.length ? `
       <table class="print-table" style="margin-top:14px;">
-        <thead><tr><th colspan="${slots.length}">NOTLAR / ŞARTLAR</th></tr></thead>
-        <tr>${slots.map(slot => `<td style="vertical-align:top;"><b>${escapeHtml(d['firma'+slot])}:</b><br>${escapeHtml(d['notlar'+slot]||'—').replace(/\n/g,'<br>')}</td>`).join('')}</tr>
+        <thead><tr><th colspan="${notluTeklifler.length}">NOTLAR / ŞARTLAR</th></tr></thead>
+        <tr>${notluTeklifler.map(t => `<td style="vertical-align:top;"><b>${escapeHtml(t.firma)}:</b><br>${escapeHtml(t.notlar||'—').replace(/\n/g,'<br>')}</td>`).join('')}</tr>
       </table>` : ''}
       <div class="print-sign-row">
         <div class="sign-box"><div class="sign-line"></div><span>Hazırlayan &nbsp;/&nbsp; Tarih</span></div>
@@ -5106,31 +5166,37 @@ function renderTeklifPaneli(talepId){
   const bekleyen = header.satirlar.filter(s=>s.durum==='bekliyor');
   const d = state.teklifDraft[talepId];
   const yazdirildi = !!state.teklifYazdirildi[talepId];
-  const yazdirmayaHazir = [1,2,3].some(slot => (d['firma'+slot]||'').trim() && bekleyen.some(s => (d.fiyatlar[s.id]||{})['f'+slot]));
-  const kolon = (slot) => `
-    <div style="flex:1;min-width:220px;border:1px solid var(--border);border-radius:10px;padding:12px;">
-      <input type="text" placeholder="Firma / Usta Adı" value="${escapeHtml(d['firma'+slot])}" oninput="onTeklifFirmaAdi('${talepId}','${slot}',this.value)" style="width:100%;margin-bottom:10px;font-weight:600;" ${yazdirildi?'disabled':''}>
-      ${bekleyen.map(s=>`
-        <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:6px;">
-          <span style="font-size:11.5px;color:var(--muted);flex:1;">${escapeHtml(s.pozTanimi)}</span>
-          <input type="text" inputmode="decimal" placeholder="Fiyat" value="${(d.fiyatlar[s.id]||{})['f'+slot]||''}" oninput="onTeklifFiyat('${talepId}','${s.id}','${slot}',this)" style="width:90px;" ${yazdirildi?'disabled':''}>
-        </div>`).join('')}
-      <div style="border-top:1px solid var(--border);margin-top:8px;padding-top:8px;display:flex;justify-content:space-between;align-items:center;">
-        <span style="font-size:12px;color:var(--muted);">Toplam</span>
-        <b id="teklifToplam_${talepId}_${slot}">${paraTR(teklifFirmaToplam(talepId, slot))} TL</b>
+  const ODEME_TURLERI = ['nakit','kkTaksitli','cek'];
+  const kutu = (t) => `
+    <div style="flex:1;min-width:260px;border:1px solid var(--border);border-radius:10px;padding:12px;">
+      <div style="display:flex;gap:6px;align-items:center;margin-bottom:10px;">
+        <input type="text" placeholder="Firma / Usta Adı" value="${escapeHtml(t.firma)}" oninput="onTeklifFirmaAdi2('${talepId}','${t.id}',this.value)" style="flex:1;font-weight:600;" ${yazdirildi?'disabled':''}>
+        ${d.teklifler.length>1 && !yazdirildi ? `<button class="icon-btn" onclick="teklifKutusuSil('${talepId}','${t.id}')" title="Bu teklifi kaldır">✕</button>` : ''}
       </div>
-      <textarea placeholder="Şartlar / Notlar (örn. ödeme vadesi, nakliye dahil mi, teslim süresi)" oninput="onTeklifNotlar('${talepId}','${slot}',this.value)" style="width:100%;margin-top:8px;min-height:50px;font-size:12px;" ${yazdirildi?'disabled':''}>${escapeHtml(d['notlar'+slot]||'')}</textarea>
-      <button class="btn-add btn-sm" style="width:100%;margin-top:8px;" onclick="secKazananTeklif('${talepId}','${slot}')" ${yazdirildi?'disabled title="Yazdırıldı — düzenlemek için önce kilidi açın"':''}>✓ Kazanan Seç</button>
+      <table style="width:100%;font-size:11.5px;border-collapse:collapse;margin-bottom:8px;">
+        <thead><tr><th style="text-align:left;">Poz</th>${ODEME_TURLERI.map(tip=>`<th style="text-align:right;">${ODEME_TURU_ETIKET[tip]}</th>`).join('')}</tr></thead>
+        <tbody>${bekleyen.map(s=>`
+          <tr><td style="color:var(--muted);padding:3px 0;">${escapeHtml(s.pozTanimi)}</td>
+          ${ODEME_TURLERI.map(tip=>`<td style="padding:2px;"><input type="text" inputmode="decimal" placeholder="—" value="${(t.fiyatlar[s.id]||{})[tip]||''}" oninput="onTeklifFiyat2('${talepId}','${t.id}','${s.id}','${tip}',this)" style="width:75px;text-align:right;" ${yazdirildi?'disabled':''}></td>`).join('')}
+          </tr>`).join('')}
+        </tbody>
+        <tfoot><tr><td style="font-weight:700;padding-top:6px;">Toplam</td>${ODEME_TURLERI.map(tip=>`<td style="text-align:right;padding-top:6px;"><b id="teklifToplam_${talepId}_${t.id}_${tip}">${paraTR(teklifKutusuToplam(talepId, t.id, tip))} TL</b></td>`).join('')}</tr></tfoot>
+      </table>
+      <textarea placeholder="Şartlar / Notlar (örn. nakliye dahil mi, teslim süresi)" oninput="onTeklifNotlar2('${talepId}','${t.id}',this.value)" style="width:100%;margin-bottom:8px;min-height:44px;font-size:12px;" ${yazdirildi?'disabled':''}>${escapeHtml(t.notlar||'')}</textarea>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        ${ODEME_TURLERI.map(tip=>`<button class="btn-add btn-sm" style="flex:1;min-width:90px;" onclick="secKazananTeklif2('${talepId}','${t.id}','${tip}')" ${yazdirildi?'disabled':''}>✓ ${ODEME_TURU_ETIKET[tip]} ile Seç</button>`).join('')}
+      </div>
     </div>`;
   return `
     <div class="card" style="margin:10px 0;box-shadow:none;border:1px solid var(--border);background:var(--primary-tint);">
-      <h2 style="font-size:13px;"><span class="num">🔀</span>Teklif Karşılaştırma — ${header.talepNo}</h2>
+      <h2 style="font-size:13px;"><span class="num">🔀</span>Teklif Karşılaştırma — ${header.talepNo} <small>(teklif sayısında sınır yoktur)</small></h2>
       ${yazdirildi ? `<div class="disabled-hint" style="margin-bottom:10px;">Bu teklif yazdırıldı ve onaya gönderildi — değişiklik yapmak için önce kilidi açın. <button class="icon-btn" onclick="onFieldRender('teklifYazdirildi', {...state.teklifYazdirildi, '${talepId}': false})" title="Kilidi Aç">🔓 Kilidi Aç</button></div>` : ''}
       <div style="display:flex;gap:12px;flex-wrap:wrap;">
-        ${kolon(1)}${kolon(2)}${kolon(3)}
+        ${d.teklifler.map(kutu).join('')}
       </div>
       <div class="actions" style="margin-top:10px;">
-        <button class="btn ${yazdirmayaHazir && !yazdirildi ? 'btn-teklif-hazir' : 'btn-ghost'} btn-sm" onclick="printTeklifKarsilastirma('${talepId}')">🖨 Teklifi Yazdır (Onaya Götür)</button>
+        ${!yazdirildi ? `<button class="btn btn-ghost btn-sm" onclick="teklifKutusuEkle('${talepId}')">+ Yeni Teklif Ekle</button>` : ''}
+        <button class="btn btn-ghost btn-sm" onclick="printTeklifKarsilastirma('${talepId}')">🖨 Teklifi Yazdır</button>
         <button class="btn btn-ghost btn-sm" onclick="closeTeklifPaneli()">Kapat</button>
       </div>
     </div>`;
@@ -5170,14 +5236,13 @@ function bulkConvertToSozlesme(){
     if(!fiyat || fiyat<=0){ hatali++; return; }
     satir.birimFiyat = fiyat;
     satir.tutar = Math.round(fiyat * satir.miktar * 100)/100;
-    satir.durum = 'sozlesmeye_cevrildi';
-    satir.sozlesmeTarihi = new Date().toLocaleString('tr-TR');
+    satir.durum = 'finans_onayi_bekliyor';
     delete state.fiyatTaslak[key];
     delete state.satinalmaSecili[key];
     basarili++;
   });
   saveTalepler();
-  if(basarili) showToast(`${basarili} kalem sözleşmeye çevrildi.` + (hatali ? ` ${hatali} kalemde geçerli fiyat girilmediği için atlandı.` : ''));
+  if(basarili) showToast(`${basarili} kalem Finans Onayına gönderildi.` + (hatali ? ` ${hatali} kalemde geçerli fiyat girilmediği için atlandı.` : ''));
   else showToast('Hiçbir kalem çevrilemedi — işaretlenen satırlara geçerli birim fiyat girin.');
   render();
 }
@@ -5209,7 +5274,7 @@ function renderSatinalmaTab(){
         <div><span class="poz-chip">${grup[0].talepNo}</span> <span style="font-size:12.5px;color:var(--muted);">${escapeHtml(grup[0].projeAdi)}</span>
           ${kazanan ? `<span style="margin-left:8px;font-size:12px;color:var(--primary);font-weight:600;">🏆 Kazanan: ${escapeHtml(kazanan)}</span>` : ''}
         </div>
-        <button class="btn btn-ghost btn-sm" onclick="openTeklifPaneli('${talepId}')">🔀 Teklif Al (en fazla 3 firma)</button>
+        <button class="btn btn-ghost btn-sm" onclick="openTeklifPaneli('${talepId}')">🔀 Teklif Al (sınırsız firma)</button>
       </div>
       <div class="table-wrap" style="box-shadow:none;">
         <table>
@@ -5221,6 +5286,31 @@ function renderSatinalmaTab(){
       ${state.ustaBilgiFormAcik===talepId ? renderUstaBilgiForm() : ''}
     </div>`;
   }).join('') : `<div class="mg-empty">Fiyat bekleyen satır yok.</div>`;
+
+  const finansBekleyenler = onayBekleyenItems('finans_onayi_bekliyor');
+  const ykBekleyenler = onayBekleyenItems('yk_onayi_bekliyor');
+  const onayRow = (t, onaylaFn, onaylaEtiket) => `
+    <tr>
+      <td>${escapeHtml(t.projeAdi)} <span style="color:var(--muted);font-size:11px;">(${t.talepNo})</span></td>
+      <td><span class="poz-chip">${t.pozNo}</span></td>
+      <td class="tanim-cell">${escapeHtml(t.pozTanimi)}</td>
+      <td>${t.miktar} ${t.birim}</td>
+      <td style="text-align:right;">${paraTR(t.tutar)} TL</td>
+      <td>${escapeHtml(t.kazananFirma||'—')}</td>
+      <td>${ODEME_TURU_ETIKET[t.odemeTuru]||'—'}</td>
+      <td style="white-space:nowrap;"><button class="btn-add btn-sm" onclick="${onaylaFn}('${t.talepId}','${t.id}')">✓ ${onaylaEtiket}</button>
+        <button class="icon-btn del-btn" onclick="satirOnayReddet('${t.talepId}','${t.id}')" title="Reddet, teklif aşamasına döndür">✕ Reddet</button></td>
+    </tr>`;
+  const onayBolumu = (baslik, numara, liste, onaylaFn, onaylaEtiket) => !liste.length ? '' : `
+    <div class="card" style="margin-bottom:14px;">
+      <h2><span class="num">${numara}</span>${baslik} <small>${liste.length} kalem</small></h2>
+      <div class="table-wrap" style="box-shadow:none;">
+        <table>
+          <thead><tr><th>Proje</th><th>Poz No</th><th>Poz Tanımı</th><th>Miktar</th><th style="text-align:right;">Tutar</th><th>Firma</th><th>Ödeme</th><th></th></tr></thead>
+          <tbody>${liste.map(t=>onayRow(t, onaylaFn, onaylaEtiket)).join('')}</tbody>
+        </table>
+      </div>
+    </div>`;
 
   const items = kesifItems();
   const toplam = items.reduce((s,t)=>s+t.tutar,0);
@@ -5253,6 +5343,9 @@ function renderSatinalmaTab(){
         <button class="btn btn-ghost del-btn" ${secilenSayisi?'':'disabled'} onclick="bulkDeleteSatirlar()">🗑 İşaretlenenleri (${secilenSayisi}) Sil</button>
       </div>
     </div>
+
+    ${onayBolumu('Finans Onayı Bekleyenler', '1B', finansBekleyenler, 'satirFinansOnayla', 'Finans Onayla')}
+    ${onayBolumu('Yönetim Kurulu Onayı Bekleyenler', '1C', ykBekleyenler, 'satirYkOnayla', 'YK Onayla')}
 
     <div class="card" style="margin-top:16px;">
       <h2><span class="num">2</span>Keşif Tablosu <small>sözleşmeye hazır</small></h2>
@@ -5393,8 +5486,13 @@ function renderTeyitFormuKarti(){
       </div>
 
       <div class="field">
-        <label>İş Programı <small style="color:var(--muted);">(her satır bir madde olur)</small></label>
-        <textarea style="min-height:60px;" oninput="onField('teyitNotIsProgrami', this.value)">${escapeHtml(state.teyitNotIsProgrami)}</textarea>
+        <label>İş Programı <small style="color:var(--muted);">(bu alan sözleşmeye aktarılır — sadece tarih girilebilir, serbest metin yazılamaz)</small></label>
+        ${state.teyitIsProgramiTarihleri.map((t,i)=>`
+        <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px;">
+          <input type="date" value="${t}" oninput="teyitIsProgramiTarihYaz(${i}, this.value)" style="max-width:200px;">
+          <button class="icon-btn del-btn" onclick="teyitIsProgramiTarihSil(${i})" title="Kaldır">✕</button>
+        </div>`).join('')}
+        <button class="btn btn-ghost btn-sm" onclick="teyitIsProgramiTarihEkle()">+ Tarih Ekle</button>
       </div>
       <div class="field">
         <label>Hakediş Ödemeleri <small style="color:var(--muted);">(her satır bir madde olur)</small></label>
@@ -7727,7 +7825,7 @@ const KILAVUZ_ICERIK = [
   { tip:'bolum', baslik:'21. Üretim → UTŞ (Uygulama Teknik Şartname)', adimlar:['UTŞ No ve UTŞ Adı girip, hazırladığınız belgeyi (Word .docx, PDF ya da ekran görüntüsü .png/.jpg) "📤 Dosya Seç" ile yükleyip "+ UTŞ Ekle" dersiniz.', 'Havuzdaki bir kayda tıklayınca (📎 dosya adı butonu) yüklenen belge görüntülenir/açılır.', '"🖨 Çıktı Al" ile tüm UTŞ listesinin yazdırılabilir dökümünü alırsınız.', 'Poz Oluştur ekranında "📐 UTŞ Havuzundan Seç" ile buradaki kayıtları arayıp seçerek Poz\'a bağlayabilirsiniz.'] },
   { tip:'bolum', baslik:'22. Bütçe', adimlar:['Bir proje seçtiğinizde iki sekme görünür: "📐 Keşif Oluştur" ve "📊 Hakediş Gerçekleşenleri".', 'Keşif Oluştur: Metraj ve Birim Fiyat Excel şablonlarını içe aktarıp "Keşfi Oluştur" dersiniz; Poz No bazında miktarlar toplanır, birim fiyatla çarpılıp MM1/MM2/MM3 bazında Planlanan/Gerçekleşen/Kalan özeti çıkar.', 'Hakediş Gerçekleşenleri: o projenin tüm hakedişlerindeki (Hakediş, Keşif Dışı, Ödeme Tutanağı — Ceza hariç) kalemlerini satır satır, hangi hakedişten geldiği ve bitiş tarihiyle birlikte listeler; "⬇ Excel\'e Aktar" ile dışa aktarabilirsiniz.'] },
   { tip:'bolum', baslik:'25. Raporlar — Onaylı Keşif ve Fiyat Bekleyen', adimlar:['"Onaylı Keşif (Bütçe için)": sözleşmeye dönüşmüş Mühendislik Talebi kalemleri ile siparişe dönüşmüş Malzeme Talebi kalemlerini (Talep No, Tarih, Proje, Poz/Malzeme, Miktar, Birim Fiyat, Tutar, Kaynak Türü) tek listede gösterir — bütçe yenilerken güncel fiyat/miktar referansı olarak "⬇ Excel\'e Aktar" ile kullanabilirsiniz.', '"Fiyat Bekleyen (Tüm Projeler)": Satınalma/Keşif → Fiyat Girişi\'nde henüz fiyatlandırılmamış tüm satırları, hangi projeden geldiğine bakmaksızın tek listede/Excel\'de gösterir — aynı malzemenin birden fazla projedeki talebini bir araya getirip toplu fiyat almak için kullanabilirsiniz.'] },
-  { tip:'bolum', baslik:'4. Satınalma / Keşif — Teklif ve Sözleşme', adimlar:['Bekleyen talep satırlarına birim fiyat girip "Fiyatı Onayla" deyin (bu, Keşif Tablosu\'na taşır — gerçek Sözleşme No\'yu Teyit Formu aşamasında "Sözleşmeye Dönüştür" ile alırsınız).', 'Tek fiyat yerine birden fazla firmadan teklif almak isterseniz, talep grubunun üstündeki "🔀 Teklif Al" ile en fazla 3 firma girip karşılaştırabilirsiniz. "Kazanan Seç" butonu, o talepteki TÜM pozlara fiyat girilmeden aktif olmaz; tüm pozlar doldurulduktan sonra basınca önce "yönetici onayı alınız" uyarısı çıkar, onaylarsanız kazanan seçilir ve doğrudan Keşif Tablosu\'na taşınır.', 'Kazanan seçtiğiniz firma/usta yeni ekleniyorsa, iletişim bilgilerini (Yetkili/Telefon) o an aynı ekranda küçük bir formla tamamlayabilirsiniz — Teyit Formu\'na gitmenize gerek kalmaz.', '"Teklifi Yazdır (Onaya Götür)" butonu, en az bir firma için fiyat girildiğinde yeşil/yanıp sönen hale gelir — patrona götürmeye hazır olduğunu gösterir.', 'Teklif\'te kazanan seçtiğiniz firma/usta, Usta/Taşeron listesinde yoksa otomatik olarak eklenir — ama Yetkili/Telefon/E-posta gibi bilgileri boş gelir. Bu bilgileri iki yoldan tamamlayabilirsiniz: (1) Ayarlar → Usta/Taşeron Yönetimi\'nde o kaydı bulup ✎ Düzenle ile elden doldurun, ya da (2) Teyit Formu Oluştur ekranında Yetkili/Telefon/E-posta kutularını doldurun — bu, Teyit oluştuğunda otomatik olarak Usta kartına da işlenir (kart o alanlarda boşsa).', 'Aynı projedeki tüm kalemler tek bir kazanan firmadan geliyorsa, Teyit Formu\'nda Proje seçtiğinizde Usta/Taşeron otomatik seçilir; farklı kazananlar varsa elle seçmeniz gerekir.', 'Sözleşmeye çevrilen kalemler Keşif Tablosu\'nda toplanır.', 'Usta/Taşeron seçip ilgili kalemleri işaretleyerek Teyit Formu oluşturun ve yazdırın — bu, Sözleşme No\'yu üretir (proje bazlı, örn. SOZ-VISTA-0001) ve Hakediş\'in temelini oluşturur.', 'Sözleşmeyi "Ana" ya da bir Ana\'ya bağlı "Ek" olarak işaretleyebilirsiniz. Ek\'in kendi ayrı bir Sözleşme No\'su olur ama Hakediş\'e Ana üzerinden bakıldığında ikisi otomatik birleşik görünür.', 'Sözleşmeye Dönüştür\'dükten hemen sonra o günün tarihi otomatik "Sözleşme Tarihi" olarak atanır — değiştirmek isterseniz Hakediş\'i başlatırken kutuyu elden düzenleyebilirsiniz.', 'Teyit Formu oluştururken, ilgili talebin Talep ekranında girdiğiniz "Öngörülen Bütçe"siyle, seçtiğiniz kalemlerin gerçekleşen toplamı ekranda ve yazdırılan belgede yan yana, aradaki fark ile birlikte gösterilir.'] },
+  { tip:'bolum', baslik:'4. Satınalma / Keşif — Teklif, Onay ve Sözleşme', adimlar:['Bekleyen talep satırlarına birim fiyat girip "Fiyatı Onayla" deyin, ya da talep grubunun üstündeki "🔀 Teklif Al (sınırsız firma)" ile birden fazla firmadan teklif toplayın — "+ Yeni Teklif Ekle" ile istediğiniz kadar firma kutusu açabilirsiniz, artık 3 firma sınırı yoktur.', 'Her teklif kutusunda, her poz satırı için AYRI AYRI Nakit / KK Taksitli / Çek olmak üzere 3 fiyat girilebilir — aynı firma, farklı ödeme koşuluna göre farklı fiyat verebilir. Toplamlar her ödeme türü için ayrı ayrı otomatik hesaplanır.', '"✓ Nakit/KK Taksitli/Çek ile Seç" butonlarından istediğiniz ödeme türüyle kazananı seçersiniz — bu, o talepteki TÜM pozlara o firma/ödeme türü için fiyat girilmeden aktif olmaz.', 'ÖNEMLİ: Artık kazanan seçmek (ya da "Fiyatı Onayla" ile tek fiyat girmek) DOĞRUDAN Keşif Tablosu\'na taşımaz — önce "Finans Onayı Bekleyenler", sonra "Yönetim Kurulu Onayı Bekleyenler" bölümlerinden sırayla geçmesi gerekir. Her iki bölüm de Satınalma/Keşif ekranında, Fiyat Girişi ile Keşif Tablosu arasında görünür; ✓ Onayla ya da ✕ Reddet (reddedilirse kalem tekrar teklif aşamasına döner) seçilebilir.', 'Yönetim Kurulu onayı verilince kalem otomatik olarak Keşif Tablosu\'na düşer, Sözleşme Tarihi o an atanır — akışın geri kalanı (Teyit Formu, Sözleşmeye Dönüştür, Hakediş) aynen devam eder.', 'Kazanan seçtiğiniz firma/usta yeni ekleniyorsa, iletişim bilgilerini (Yetkili/Telefon) o an aynı ekranda küçük bir formla tamamlayabilirsiniz — Teyit Formu\'na gitmenize gerek kalmaz.', 'Teklif\'te kazanan seçtiğiniz firma/usta, Usta/Taşeron listesinde yoksa otomatik olarak eklenir — ama Yetkili/Telefon/E-posta gibi bilgileri boş gelir. Bu bilgileri iki yoldan tamamlayabilirsiniz: (1) Ayarlar → Usta/Taşeron Yönetimi\'nde o kaydı bulup ✎ Düzenle ile elden doldurun, ya da (2) Teyit Formu Oluştur ekranında Yetkili/Telefon/E-posta kutularını doldurun.', 'Aynı projedeki tüm kalemler tek bir kazanan firmadan geliyorsa, Teyit Formu\'nda Proje seçtiğinizde Usta/Taşeron otomatik seçilir; farklı kazananlar varsa elle seçmeniz gerekir.', 'Usta/Taşeron seçip ilgili kalemleri işaretleyerek Teyit Formu oluşturun ve yazdırın — bu, Sözleşme No\'yu üretir (proje bazlı, örn. SOZ-VISTA-0001) ve Hakediş\'in temelini oluşturur. "İş Programı" alanına artık serbest metin yazılamaz, sadece tarih eklenebilir ("+ Tarih Ekle") — bu alan doğrudan sözleşme hazırlığına gittiği için standart tutulur.', 'Sözleşmeyi "Ana" ya da bir Ana\'ya bağlı "Ek" olarak işaretleyebilirsiniz. Ek\'in kendi ayrı bir Sözleşme No\'su olur ama Hakediş\'e Ana üzerinden bakıldığında ikisi otomatik birleşik görünür.', 'Teyit Formu oluştururken, ilgili talebin Talep ekranında girdiğiniz "Öngörülen Bütçe"siyle, seçtiğiniz kalemlerin gerçekleşen toplamı ekranda ve yazdırılan belgede yan yana, aradaki fark ile birlikte gösterilir.'] },
   { tip:'bolum', baslik:'5. Raporlar → Sözleşmeler — Aktivite Ağacı kurulumu', adimlar:['Her sözleşme satırının yanındaki 🌳 butonuna basarak o sözleşmenin (Ana + varsa bağlı tüm Ek\'lerinin) Aktivite Ağacını açarsınız — Ana\'nın panelinde Ek\'in kalemleri de otomatik birlikte görünür.', 'MM03 seçip (tıklayınca tüm liste açılır), Aktivite ekini yazıp (örn. _A), altta "Hepsini Seç" ya da işaretlediğiniz belirli pozlara "Seçili Pozlara Uygula" ile o Aktivite\'yi bağlarsınız. Aynı sözleşmede farklı pozlara farklı Aktivite\'ler atamak için bu adımı istediğiniz kadar tekrarlayabilirsiniz.', 'Yanlış yazdıysanız satırdaki ✎ ile sadece Aktivite kısmını düzeltebilir, ✕ ile satırı silebilirsiniz.', 'Tek tek kurmak yerine "⬇ İndir (Şablon + Mevcut Veri)" ile Excel şablonu alıp doldurup "⬆ Excel\'den İçe Aktar" ile toplu yükleyebilirsiniz.', 'Bir projedeki TÜM sözleşmelerin ağacını tek dosyada görmek isterseniz, Proje filtresini seçtikten sonra üstteki "🌳 Proje Aktivite Ağacını Dışa Aktar" butonunu kullanın.'] },
   { tip:'bolum', baslik:'6. Hakediş — Başlatma ve Satır Ekleme', adimlar:['Proje ve Tedarikçi/Usta, sonra Ana Sözleşme seçerek yeni bir hakediş başlatın — Sözleşme Bedeli o tedarikçinin Teyit Formlarından, Sözleşme Tarihi ve Satınalma Sipariş No da otomatik gelir (isterseniz elden değiştirebilirsiniz).', 'Bitiş Tarihi\'ni girdiğinizde Dönem (örn. 202609) otomatik hesaplanır. İlk hakedişte Yer Teslim Tarihi\'ni girerseniz Başlangıç Tarihi de otomatik oradan gelir.', '"🔄 Ağaçtan Güncelle" butonuna basınca, o sözleşmenin Aktivite Ağacı\'ndaki tüm kalemler (eksikleri) otomatik olarak Hakediş satırlarına düşer — Bu Dönem 0 ile başlar, siz sadece miktarı girersiniz.', 'İstersen manuel de satır ekleyebilirsiniz: MM03 seçin (tıklayınca tüm liste açılır), Aktivite ekini yazın, "Poz Ara" kutusuna tıklayınca o sözleşmenin tüm pozları listelenir, birini seçip Bu Dönem miktarını girip "+ Satır Ekle" deyin.', 'Hakediş Satırları tablosunda "Bu Dönem" hücresine doğrudan yazarak da miktar girebilirsiniz — Toplam ve Toplam % otomatik hesaplanır. "Toplam %" kutusuna yüzde yazarsanız Bu Dönem miktarı da otomatik tersinden hesaplanır (ikisi karşılıklı çalışır).', '"Keşif Miktar" sütunu, sözleşmeden gelen kontrat miktarıdır ama gerekirse (mutabakatla) siz de elden değiştirebilirsiniz. Toplam Miktar, Keşif Miktarı aşarsa uyarı çıkar.', 'Miktarları tek tek yazmak yerine "⬆ Bu Dönem Miktarlarını İçe Aktar" ile Excel şablonu indirip doldurup toplu yükleyebilirsiniz.'] },
   { tip:'bolum', baslik:'7. Hakediş — Keşif Dışı (sözleşme kapsamı dışındaki işler)', adimlar:['Bu bölüm, orijinal sözleşme kapsamına girmeyen ama yine de bir Poz\'a bağlı ek işler içindir — Poz No zorunludur (Ödeme Tutanağı bölümünden farklı olarak).', 'Aktivite alanı serbest yazılmaz: 5 sabit sebepten (P1 Proje Revizyonu, P2 Fiyat Farkı, P3 Üretim Kararı, P4 Yönetim Kararı, P5 Satış Kararı) birini seçersiniz. Aynı sebepten birden fazla kalem gireceğinizde "Ek" kutusuna bir uzantı (örn. _1) yazarak ayırt edebilirsiniz.', 'Poz No\'yu yazıp kutudan çıkınca Tanım ve Birim, Poz Listesi\'nden otomatik dolar.', 'Miktar (opsiyonel) girerseniz Birim Fiyat otomatik hesaplanır (Tutar ÷ Miktar).', 'İş Yapım Emri No kutusu, boş bırakırsanız otomatik önerilen bir kodu (PROJE_ISMR_TEDARİKÇİ_SIRA formatında, örn. VISTA_ISMR_OSMAN_001) kullanır — isterseniz üzerine kendi kodunuzu yazabilirsiniz.', 'Kısa Neden zorunludur ve yazdığınız metin otomatik olarak ilk harfi büyük şekilde düzeltilir.'] },
@@ -7934,7 +8032,25 @@ function render(){
   }
   Object.keys(kaydirmalar).forEach(id=>{ const e = document.getElementById(id); if(e) e.scrollTop = kaydirmalar[id]; });
   window.scrollTo(0, sayfaKaydirma); // ayni ekranda kaldiysa eski konum, sekme degistiyse 0 (basa don)
-  if(state.tab==='manage') veriKonumuBilgiGoster();
+  if(state.tab==='manage'){ veriKonumuBilgiGoster(); ayarlarCollapseKur(); }
+}
+function ayarlarCollapseKur(){
+  // Ayarlar sayfasindaki her ".card" bloğunu otomatik olarak aç-kapa (collapse) yapar.
+  // HTML şablonlarına tek tek dokunmadan, genel bir mekanizma ile çalışır.
+  const kartlar = document.querySelectorAll('#app .card');
+  kartlar.forEach((kart, idx) => {
+    const h2 = kart.querySelector(':scope > h2');
+    if(!h2) return;
+    const id = 'ayb_' + idx + '_' + h2.textContent.trim().slice(0,30);
+    const kapali = !!state.ayarlarKapaliBolumler[id];
+    h2.style.cursor = 'pointer';
+    h2.style.userSelect = 'none';
+    let ok = h2.querySelector('.collapse-ok');
+    if(!ok){ ok = document.createElement('span'); ok.className='collapse-ok'; ok.style.cssText='float:right;font-size:12px;color:var(--muted);'; h2.appendChild(ok); }
+    ok.textContent = kapali ? '▶' : '▼';
+    [...kart.children].filter(c => c !== h2).forEach(el => { el.style.display = kapali ? 'none' : ''; });
+    h2.onclick = () => { state.ayarlarKapaliBolumler[id] = !kapali; render(); };
+  });
 }
 
 /* ================= MALZEME & HİZMET MODÜLÜ (pozsuz alım + stok) ================= */
@@ -9337,7 +9453,7 @@ function departmanAd(id){ const d = state.departmanlar.find(x=>x.id===id); retur
 function personelIzinKayitlari(pid){ return state.izinKayitlari.filter(i=>i.personelId===pid); }
 function personelKullanilanIzin(pid){ return personelIzinKayitlari(pid).filter(i=>i.durum==='Onaylandı').reduce((a,i)=>a+i.gunSayisi,0); }
 function personelBekleyenIzin(pid){ return personelIzinKayitlari(pid).filter(i=>i.durum==='Beklemede'); }
-function personelKalanIzin(p){ return Math.max(0, (p.toplamIzin||0) - personelKullanilanIzin(p.id)); }
+function personelKalanIzin(p){ return (p.toplamIzin||0) - personelKullanilanIzin(p.id); }
 function izinGunSayisi(baslangic, bitis){
   const a = new Date(baslangic), b = new Date(bitis);
   if(isNaN(a) || isNaN(b) || b < a) return 0;
@@ -9346,6 +9462,17 @@ function izinGunSayisi(baslangic, bitis){
 function personelKisaAd(p){ return (p.ad||'').trim().split(' ').filter(Boolean).map(k=>k[0]).slice(0,2).join('').toLocaleUpperCase('tr-TR'); }
 
 /* ---------- Personel: ekleme / düzenleme / silme ---------- */
+function personelIsimleriDuzelt(){
+  let degisen = 0;
+  state.personeller.forEach(p => {
+    const yeniAd = formatIsimTR(p.ad);
+    if(yeniAd !== p.ad){ p.ad = yeniAd; degisen++; }
+    if(p.title){ const yeniTitle = formatCumleTR(p.title); if(yeniTitle !== p.title){ p.title = yeniTitle; } }
+  });
+  if(degisen===0){ showToast('Tüm isimler zaten düzgün yazılmış.'); return; }
+  savePersoneller(); render();
+  showToast(`${degisen} personelin isim yazımı düzeltildi.`);
+}
 function addPersonel(){
   const ad = state.newPersonelAd.trim();
   if(!ad){ showToast('Ad soyad girin.'); return; }
@@ -9421,6 +9548,11 @@ function personelExcelAktar(){
   XLSX.utils.book_append_sheet(wb, ws, 'Personel');
   XLSX.writeFile(wb, 'Personel_Listesi.xlsx');
 }
+function personelListeDenDuzelt(id){
+  state.personelAcikId = id;
+  startEditPersonel(id);
+}
+function personelListeDenSil(id){ deletePersonel(id); }
 function personelAc(id){
   const yeni = (state.personelAcikId===id) ? '' : id;
   tabGecmisiEkle({tip:'field', anahtar:'personelAcikId', eski: state.personelAcikId});
@@ -9829,13 +9961,14 @@ function renderPersonelTab(){
   const kartlar = !gosterilecekler.length ? `<div class="mg-empty">${depFiltre ? 'Bu departmanda kayıt yok.' : 'Henüz personel kaydı yok.'}</div>`
     : liste1 ? `
     <div class="table-wrap" style="box-shadow:none;border:1px solid var(--border);">
-      <table><thead><tr><th>Ad Soyad</th><th>Unvan</th><th>Departman</th><th>Şirket</th><th>Yönetici</th><th style="text-align:right;">İzin Hakkı</th><th style="text-align:right;">Kullanılan</th><th style="text-align:right;">Kalan</th><th>E-posta</th></tr></thead>
+      <table><thead><tr><th>Ad Soyad</th><th>Unvan</th><th>Departman</th><th>Şirket</th><th>Yönetici</th><th style="text-align:right;">İzin Hakkı</th><th style="text-align:right;">Kullanılan</th><th style="text-align:right;">Kalan</th><th>E-posta</th><th></th></tr></thead>
       <tbody>${gosterilecekler.map(p=>{
         const yonetici = p.yoneticiId ? state.personeller.find(x=>x.id===p.yoneticiId) : null;
         return `<tr style="cursor:pointer;" onclick="personelAc('${p.id}')">
           <td>${escapeHtml(p.ad)}</td><td>${escapeHtml(p.title)||'—'}</td><td>${escapeHtml(departmanAd(p.departmanId))}</td><td>${escapeHtml(p.sirketKodu)}</td>
-          <td>${yonetici?escapeHtml(yonetici.ad):'—'}</td><td style="text-align:right;">${p.toplamIzin||0}</td><td style="text-align:right;">${personelKullanilanIzin(p.id)}</td><td style="text-align:right;font-weight:600;">${personelKalanIzin(p)}</td>
-          <td>${escapeHtml(p.email)||'—'}</td></tr>`;
+          <td>${yonetici?escapeHtml(yonetici.ad):'—'}</td><td style="text-align:right;">${p.toplamIzin||0}</td><td style="text-align:right;">${personelKullanilanIzin(p.id)}</td><td style="text-align:right;font-weight:600;${personelKalanIzin(p)<0?'color:var(--danger);':''}">${personelKalanIzin(p)}</td>
+          <td>${escapeHtml(p.email)||'—'}</td>
+          <td style="white-space:nowrap;" onclick="event.stopPropagation()"><button class="icon-btn" onclick="personelListeDenDuzelt('${p.id}')" title="Düzelt">✎</button><button class="icon-btn del-btn" onclick="personelListeDenSil('${p.id}')" title="Sil">🗑</button></td></tr>`;
       }).join('')}</tbody></table>
     </div>` : `<div class="home-grid">${gosterilecekler.map(p=>renderPersonelOzetKarti(p)).join('')}</div>`;
   const acikPersonel = state.personelAcikId ? state.personeller.find(p=>p.id===state.personelAcikId) : null;
@@ -9879,6 +10012,7 @@ function renderPersonelTab(){
           <button class="btn btn-ghost btn-sm" onclick="personelSablonIndir()">⬇ Boş Şablon İndir</button>
           <label class="btn btn-ghost btn-sm" style="cursor:pointer;">⬆ Excel'den İçe Aktar<input type="file" accept=".xlsx,.xls" style="display:none;" onchange="personelIceAktar(this)"></label>
           <button class="btn btn-ghost btn-sm" onclick="personelOrgSemasiAc()">🧑‍💼 Organizasyon Şeması</button>
+          <button class="btn btn-ghost btn-sm" onclick="personelIsimleriDuzelt()" title="Tüm personel isimlerinin yazım düzenini (ilk harf büyük) standartlaştırır">🔤 Tüm İsimleri Düzelt</button>
         </div>
       </h2>
       <div style="display:flex;gap:18px;align-items:flex-start;">
