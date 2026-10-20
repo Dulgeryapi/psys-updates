@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kurumsal Üretim Sistemleri — v1.0.6</title>
+<title>Kurumsal Üretim Sistemleri — v1.0.7</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
 <script>
@@ -537,7 +537,7 @@ const state = {
   envanterList: [],
   newEnvAnaKodu:'', newEnvAnaAd:'', newEnvAltAnaKodu:'', newEnvAltKodu:'', newEnvAltAd:'',
   envAnaGrup:'', envAltGrup:'', envTanim:'', envBirim:'',
-  envListeArama:'', formAltSekme:'mevcut', listAltSekme:'mevcut',
+  envListeArama:'', formAltSekme:'mevcut', listAltSekme:'mevcut', pozListeSayfa:1,
   taxonomy: [],
   santiyeList: [],
   projeler: [],
@@ -4080,6 +4080,15 @@ function onFieldRender(key, v){
   if(ALT_SEKME_ALANLARI.includes(key) && state[key]!==v) tabGecmisiEkle({tip:'field', anahtar:key, eski: state[key]});
   state[key]=v; render();
 }
+// Performans: arama/filtre kutuları için - state'i ANINDA günceller (yazı görünür kalsın),
+// ama BUYUK TABLOLARI yeniden cizen render()'i, yazmayi DURDURDUKTAN ~250ms sonra TEK SEFERDE tetikler.
+// Boylece her harfte degil, yazma bittiginde render olur - "yazarken donma" hissi buyuk olcude azalir.
+const _debounceZamanlayicilar = {};
+function onFieldRenderDebounced(key, v){
+  state[key] = v; // deger aninda guncellenir, input her zaman yazdiginizi yansitir
+  clearTimeout(_debounceZamanlayicilar[key]);
+  _debounceZamanlayicilar[key] = setTimeout(() => { render(); }, 250);
+}
 function onFieldBool(key, v){ state[key]=v; }
 function onTevkifatVarMiChange(checked){
   state.newHkTevkifatVarMi = checked;
@@ -4477,7 +4486,7 @@ function renderEnvanterListTab(){
     ${listEnvSekmeHtml('envanter')}
     <div class="list-toolbar">
       <div class="search-box">
-        <input type="text" placeholder="Kod, tanım veya grup ara…" value="${escapeHtml(state.envListeArama)}" oninput="onFieldRender('envListeArama', this.value)">
+        <input type="text" placeholder="Kod, tanım veya grup ara…" value="${escapeHtml(state.envListeArama)}" oninput="onFieldRenderDebounced('envListeArama', this.value)">
       </div>
       <button class="btn btn-ghost" onclick="exportEnvanterExcel()">⬇ Excel'e Aktar</button>
     </div>
@@ -4508,6 +4517,7 @@ function listEnvSekmeHtml(aktif){
     <button class="tab-btn ${aktif==='envanter'?'active':''}" onclick="onFieldRender('listAltSekme','envanter')">📦 Envanter Poz Listesi</button>
   </div>`;
 }
+const POZ_LISTE_SAYFA_BOYUTU = 50;
 function renderListTab(){
   if(state.listAltSekme==='envanter') return renderEnvanterListTab();
   const q = state.search.trim().toLocaleLowerCase('tr-TR');
@@ -4515,6 +4525,14 @@ function renderListTab(){
     .map((p,i)=>({...p, _idx:i}))
     .filter(p => !q || p.pozNo.toLocaleLowerCase('tr-TR').includes(q) || p.pozTanimi.toLocaleLowerCase('tr-TR').includes(q) || p.anaAd.toLocaleLowerCase('tr-TR').includes(q) || p.altAd.toLocaleLowerCase('tr-TR').includes(q) || p.taliAd.toLocaleLowerCase('tr-TR').includes(q))
     .reverse();
+  // Performans: yuzlerce poz olsa bile HER SEFERINDE sadece bir SAYFALIK (50) satir islenir/cizilir -
+  // boylece render suresi TOPLAM poz sayisindan degil, sayfa boyutundan etkilenir (sabit kalir).
+  const pozToplamSayfa = Math.max(1, Math.ceil(filtered.length / POZ_LISTE_SAYFA_BOYUTU));
+  if(state.pozListeSayfa > pozToplamSayfa) state.pozListeSayfa = pozToplamSayfa;
+  if(state.pozListeSayfa < 1) state.pozListeSayfa = 1;
+  const pozSayfaBaslangic = (state.pozListeSayfa-1) * POZ_LISTE_SAYFA_BOYUTU;
+  const filteredTumu = filtered;
+  const filteredSayfalik = filtered.slice(pozSayfaBaslangic, pozSayfaBaslangic + POZ_LISTE_SAYFA_BOYUTU);
 
   if(state.list.length===0){
     return `
@@ -4528,7 +4546,7 @@ function renderListTab(){
       </div>`;
   }
 
-  const rows = filtered.map(p => {
+  const rows = filteredSayfalik.map(p => {
     if(state.editPozIdx === p._idx){
       const d = state.editPozDraft;
       return `
@@ -4573,7 +4591,7 @@ function renderListTab(){
     ${listEnvSekmeHtml('mevcut')}
     <div class="list-toolbar">
       <div class="search-box">
-        <input type="text" id="pozSearchInput" placeholder="Poz no, tanım veya grup ara…" value="${escapeHtml(state.search)}" oninput="onFieldRender('search', this.value)">
+        <input type="text" id="pozSearchInput" placeholder="Poz no, tanım veya grup ara…" value="${escapeHtml(state.search)}" oninput="onFieldRenderDebounced('search', this.value)">
       </div>
       <button class="btn btn-ghost" onclick="exportExcel()">⬇ Excel'e Aktar</button>
     </div>
@@ -4587,6 +4605,12 @@ function renderListTab(){
         <tbody>${rows}</tbody>
       </table>
     </div>
+    ${pozToplamSayfa>1 ? `
+    <div style="display:flex;justify-content:center;align-items:center;gap:12px;margin-top:14px;">
+      <button class="btn btn-ghost btn-sm" ${state.pozListeSayfa<=1?'disabled':''} onclick="onFieldRender('pozListeSayfa', ${state.pozListeSayfa-1})">◀ Önceki</button>
+      <span style="color:var(--muted);font-size:13px;">Sayfa ${state.pozListeSayfa} / ${pozToplamSayfa} <small>(${filteredTumu.length} kayıt)</small></span>
+      <button class="btn btn-ghost btn-sm" ${state.pozListeSayfa>=pozToplamSayfa?'disabled':''} onclick="onFieldRender('pozListeSayfa', ${state.pozListeSayfa+1})">Sonraki ▶</button>
+    </div>` : ''}
   `;
 }
 
@@ -4739,7 +4763,7 @@ function renderTalepTab(){
           return `
         <div class="field">
           <label>Envanter Havuzunda Ara</label>
-          <input type="text" placeholder="Örn. EPS, Kalekim, 2.03…" value="${escapeHtml(state.talepEnvArama)}" oninput="onFieldRender('talepEnvArama', this.value)" ${!aktif?'disabled':''}>
+          <input type="text" placeholder="Örn. EPS, Kalekim, 2.03…" value="${escapeHtml(state.talepEnvArama)}" oninput="onFieldRenderDebounced('talepEnvArama', this.value)" ${!aktif?'disabled':''}>
           ${eslesenler.length ? `<div class="mg-list" style="margin-top:8px;max-height:180px;overflow:auto;">${eslesenler.map(e=>`
             <div class="mg-row" style="cursor:pointer;" onclick="onFieldRender('talepEnvSeciliKod','${e.kod}'); onField('talepEnvArama','');">
               <span class="mg-code">${e.kod}</span><span class="mg-ad">${escapeHtml(e.tanim)} (${e.birim})</span>
@@ -5359,7 +5383,7 @@ function renderTeyitFormuKarti(){
 
       <div class="field">
         <label>Teyide Dahil Edilecek Kalemler</label>
-        <input type="text" placeholder="Talep No ile daralt (opsiyonel)…" value="${escapeHtml(state.teyitKalemArama)}" oninput="onFieldRender('teyitKalemArama', this.value)" style="margin-bottom:8px;max-width:260px;">
+        <input type="text" placeholder="Talep No ile daralt (opsiyonel)…" value="${escapeHtml(state.teyitKalemArama)}" oninput="onFieldRenderDebounced('teyitKalemArama', this.value)" style="margin-bottom:8px;max-width:260px;">
         <div class="table-wrap" style="box-shadow:none;border:1px solid var(--border);">
           <table>
             <thead><tr><th><input type="checkbox" ${adaylar.length && adaylar.every(t=>state.teyitSecili[t.talepId+'::'+t.id])?'checked':''} onchange="toggleTumTeyitSecili(this.checked)" title="Hepsini Seç"></th><th>Talep No</th><th>Proje</th><th>Poz No</th><th>Poz Tanımı</th><th>Miktar</th><th>Birim Fiyat</th><th>Tutar</th></tr></thead>
@@ -7306,7 +7330,7 @@ function renderKesifRaporu(){
   return `
     <div class="card">
       <div class="list-toolbar">
-        <div class="search-box"><input type="text" placeholder="Talep No veya Proje ara…" value="${escapeHtml(state.raporKesifTalepArama)}" oninput="onFieldRender('raporKesifTalepArama', this.value)"></div>
+        <div class="search-box"><input type="text" placeholder="Talep No veya Proje ara…" value="${escapeHtml(state.raporKesifTalepArama)}" oninput="onFieldRenderDebounced('raporKesifTalepArama', this.value)"></div>
       </div>
       <div class="table-wrap">
         <table>
