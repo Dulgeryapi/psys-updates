@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kurumsal Üretim Sistemleri — v1.0.9</title>
+<title>Kurumsal Üretim Sistemleri — v1.0.10</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
 <script>
@@ -769,11 +769,10 @@ async function loadAll(){
   ensureKesifDisiMm03();
   mhHazirla();
   if(hasMesgulDurumu){
-    try{
-      const durum = await window.mesgulDurumu.kontrolEt();
-      if(durum.mesgul){ state.mesgulBilgi = durum; }
-      else{ await window.mesgulDurumu.yineDeDevamEt(); }
-    }catch(e){}
+    // "akilli kayit" sistemi zaten cakismayi/veri kaybini onluyor - bu yuzden kullaniciya
+    // uyari EKRANI gostermiyoruz, ama heartbeat'i (ben aktifim bilgisini) baslatmak icin
+    // ayni cagriyi sessizce yapiyoruz.
+    try{ await window.mesgulDurumu.yineDeDevamEt(); }catch(e){}
   }
   state.loaded = true;
   render();
