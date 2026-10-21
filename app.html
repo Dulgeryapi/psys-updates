@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kurumsal Üretim Sistemleri — v1.0.11</title>
+<title>Kurumsal Üretim Sistemleri — v1.0.12</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
 <script>
@@ -9466,7 +9466,7 @@ function personelIsimleriDuzelt(){
   state.personeller.forEach(p => {
     const yeniAd = formatIsimTR(p.ad);
     if(yeniAd !== p.ad){ p.ad = yeniAd; degisen++; }
-    if(p.title){ const yeniTitle = formatCumleTR(p.title); if(yeniTitle !== p.title){ p.title = yeniTitle; } }
+    if(p.title){ const yeniTitle = formatIsimTR(p.title); if(yeniTitle !== p.title){ p.title = yeniTitle; degisen++; } }
   });
   if(degisen===0){ showToast('Tüm isimler zaten düzgün yazılmış.'); return; }
   savePersoneller(); render();
@@ -9553,11 +9553,16 @@ function personelListeDenDuzelt(id){
 }
 function personelListeDenSil(id){ deletePersonel(id); }
 function personelAc(id){
-  const kapaniyor = (state.personelAcikId===id);
-  const yeni = kapaniyor ? '' : id;
+  // BASIT KURAL: karta (kart gorunumunde ya da liste satirinda) her tiklandiginda,
+  // DOGRUDAN duzenle/kaydet formu acilir - istisna yok, kapatma mantigi yok.
+  // Kapatmak icin "Vazgec" (X) butonuna basilir.
   tabGecmisiEkle({tip:'field', anahtar:'personelAcikId', eski: state.personelAcikId});
-  state.personelAcikId = yeni;
-  if(kapaniyor){ state.editPersonelId = null; render(); } else { startEditPersonel(id); }
+  state.personelAcikId = id;
+  startEditPersonel(id);
+}
+function personelKapat(){
+  tabGecmisiEkle({tip:'field', anahtar:'personelAcikId', eski: state.personelAcikId});
+  state.personelAcikId = ''; state.editPersonelId = null; render();
 }
 function startEditPersonel(id){
   const p = state.personeller.find(x=>x.id===id); if(!p) return;
@@ -9572,9 +9577,10 @@ function saveEditPersonel(id){
   if(!d.ad.trim()){ showToast('Ad soyad boş olamaz.'); return; }
   if(d.yoneticiId===id){ showToast('Bir personel kendi yöneticisi olamaz.'); return; }
   p.ad = formatIsimTR(d.ad.trim()); p.sirketKodu = d.sirketKodu; p.departmanId = d.departmanId;
-  p.title = formatCumleTR(d.title.trim()); p.yoneticiId = d.yoneticiId || ''; p.toplamIzin = Math.max(0, mhSayi(d.toplamIzin)||0); p.email = (d.email||'').trim();
-  state.editPersonelId=null; state.editPersonelDraft={};
+  p.title = formatIsimTR(d.title.trim()); p.yoneticiId = d.yoneticiId || ''; p.toplamIzin = Math.max(0, mhSayi(d.toplamIzin)||0); p.email = (d.email||'').trim();
+  state.editPersonelId=null; state.editPersonelDraft={}; state.personelAcikId='';
   savePersoneller(); render();
+  showToast('Kaydedildi:', p.ad);
 }
 function deletePersonel(id){
   if(state.personeller.some(p=>p.yoneticiId===id)){ showToast('Bu kişi başka personellerin yöneticisi olduğu için silinemez. Önce bağlı personelin yöneticisini değiştirin.'); return; }
@@ -10021,7 +10027,22 @@ function renderPersonelTab(){
         <div style="flex:1;min-width:0;">${kartlar}</div>
       </div>
     </div>
-    ${detayHtml}`;
+    ${acikPersonel ? `
+    <div onclick="if(event.target===this) personelKapat()" style="position:fixed;inset:0;background:rgba(36,27,46,0.55);z-index:500;display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto;">
+      <div style="max-width:680px;width:100%;margin-top:20px;">${detayHtml}</div>
+    </div>` : ''}`;
+}
+function personelSekmeBtn(p){
+  const d = state.editPersonelId===p.id;
+  return `<div style="display:flex;gap:6px;margin-bottom:10px;">
+    <button class="tab-btn ${d?'active':''}" style="font-size:12.5px;padding:7px 12px;" onclick="startEditPersonel('${p.id}')">✎ Düzenle</button>
+    <button class="tab-btn ${!d?'active':''}" style="font-size:12.5px;padding:7px 12px;" onclick="personelIzineGec('${p.id}')">📅 İzin Kayıtları</button>
+    <button class="icon-btn" style="margin-left:auto;" onclick="personelKapat()" title="Kapat">✕</button>
+  </div>`;
+}
+function personelIzineGec(id){
+  state.editPersonelId = null; state.editPersonelDraft = {};
+  state.personelAcikId = id; render();
 }
 function renderPersonelKarti(p){
   const d = state.editPersonelId===p.id;
@@ -10031,6 +10052,7 @@ function renderPersonelKarti(p){
     const depOpts = state.departmanlar.map(dp=>`<option value="${dp.id}" ${draft.departmanId===dp.id?'selected':''}>${escapeHtml(dp.ad)}</option>`).join('');
     const yoneticiOpts = state.personeller.filter(x=>x.id!==p.id).map(x=>`<option value="${x.id}" ${draft.yoneticiId===x.id?'selected':''}>${escapeHtml(x.ad)}</option>`).join('');
     return `<div class="card" style="margin:8px 0;box-shadow:none;border:1px solid var(--border);background:var(--primary-tint);">
+      ${personelSekmeBtn(p)}
       <h2 style="font-size:13px;">✎ Personeli Düzenle</h2>
       <div class="row2" style="margin-bottom:10px;">
         <div class="field"><label>Ad Soyad</label><input type="text" value="${escapeHtml(draft.ad)}" oninput="onEditPersonel('ad', this.value)"></div>
@@ -10045,7 +10067,7 @@ function renderPersonelKarti(p){
         <div class="field"><label>Yıllık İzin Hakkı</label><input type="text" inputmode="decimal" value="${escapeHtml(draft.toplamIzin)}" oninput="onEditPersonel('toplamIzin', this.value)"></div>
       </div>
       <div class="field" style="margin-bottom:10px;"><label>E-posta <small style="color:var(--muted);">(opsiyonel — izin onay bildirimleri için)</small></label><input type="email" value="${escapeHtml(draft.email)}" oninput="onEditPersonel('email', this.value)"></div>
-      <div class="actions"><button class="btn btn-publish" onclick="saveEditPersonel('${p.id}')">Kaydet</button><button class="btn btn-ghost" onclick="onField('editPersonelId', null)">Vazgeç</button></div>
+      <div class="actions"><button class="btn btn-publish" onclick="saveEditPersonel('${p.id}')">Kaydet</button><button class="btn btn-ghost" onclick="personelKapat()">Vazgeç</button></div>
     </div>`;
   }
   const sirket = getSirketObj(p.sirketKodu);
@@ -10075,6 +10097,7 @@ function renderPersonelKarti(p){
   const bekleyenHtml = ''; // onay artik Personel kartindan degil, sifreli "Onay Girisi" ekranindan yapiliyor
   const f = state.izinF;
   return `<div class="card" style="margin:8px 0;box-shadow:none;border:1px solid var(--border);background:var(--primary-tint);">
+    ${personelSekmeBtn(p)}
     <div style="display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap;">
       <div style="text-align:center;flex-shrink:0;">
         <svg width="84" height="84" viewBox="0 0 84 84">
