@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kurumsal Üretim Sistemleri — v1.0.10</title>
+<title>Kurumsal Üretim Sistemleri — v1.0.11</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
 <script>
@@ -9553,9 +9553,11 @@ function personelListeDenDuzelt(id){
 }
 function personelListeDenSil(id){ deletePersonel(id); }
 function personelAc(id){
-  const yeni = (state.personelAcikId===id) ? '' : id;
+  const kapaniyor = (state.personelAcikId===id);
+  const yeni = kapaniyor ? '' : id;
   tabGecmisiEkle({tip:'field', anahtar:'personelAcikId', eski: state.personelAcikId});
-  state.personelAcikId = yeni; render();
+  state.personelAcikId = yeni;
+  if(kapaniyor){ state.editPersonelId = null; render(); } else { startEditPersonel(id); }
 }
 function startEditPersonel(id){
   const p = state.personeller.find(x=>x.id===id); if(!p) return;
